@@ -49,13 +49,13 @@ pub fn use_collection<T: Serialize + DeserializeOwned + 'static>(
 ) -> Signal<Option<Collection<T>>> {
     let name = name.to_string();
     let mut collection_signal = use_signal(|| None::<Collection<T>>);
-    
+
     use_effect(move || {
         if let Some(ref db) = *db.read() {
             collection_signal.set(Some(db.collection::<T>(&name)));
         }
     });
-    
+
     collection_signal
 }
 
@@ -79,7 +79,7 @@ where
     Fut: Future<Output = Result<Vec<T>>> + 'static,
 {
     let mut result = use_signal(|| Ok(Vec::new()));
-    
+
     use_effect(move || {
         if let Some(ref collection) = *collection.read() {
             let query_fn = query_fn.clone();
@@ -112,16 +112,13 @@ where
 /// // Write
 /// users_writer.insert("user1", &new_user).await;
 /// ```
-pub fn use_collection_state<T>(
-    db: &Database,
-    name: &str,
-) -> (Signal<Vec<T>>, CollectionWriter<T>)
+pub fn use_collection_state<T>(db: &Database, name: &str) -> (Signal<Vec<T>>, CollectionWriter<T>)
 where
     T: Serialize + DeserializeOwned + Clone + 'static,
 {
     let collection: Collection<T> = db.collection(name);
     let mut items = use_signal(Vec::new);
-    
+
     // Initial load
     {
         let collection = collection.clone();

@@ -1,4 +1,4 @@
-use dioxus_indexeddb::{Database, DatabaseConfig, Collection};
+use dioxus_indexeddb::{Collection, Database, DatabaseConfig};
 use reqwasm::http::Request;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -37,7 +37,7 @@ impl SyncService {
             .with_store("products", "id")
             .with_store("sync_meta", "key")
             .with_store("query_cache", "query_key");
-        
+
         Database::open(config)
             .await
             .map_err(|e| format!("Failed to open IndexedDB: {:?}", e))
@@ -54,7 +54,7 @@ impl SyncService {
     }
 
     /// Hot sync: Check local cache first, only fetch if not cached or hard_sync is true
-    /// 
+    ///
     /// # Arguments
     /// * `db` - The IndexedDB database
     /// * `page` - Page number
@@ -62,7 +62,7 @@ impl SyncService {
     /// * `search` - Search query string
     /// * `category` - Category filter
     /// * `hard_sync` - If true, force fetch from backend even if cached
-    /// 
+    ///
     /// # Returns
     /// (products, total_count, source) where source is "cache" or "backend"
     pub async fn hot_sync_products(
@@ -76,7 +76,7 @@ impl SyncService {
     ) -> std::result::Result<(Vec<Product>, u64, &'static str), String> {
         let query_key = Self::query_key(page, per_page, &search, &category);
         let cache_collection: Collection<QueryCacheEntry> = db.collection("query_cache");
-        
+
         // Check if we have a cached result for this exact query
         if !hard_sync {
             if let Ok(Some(cached)) = cache_collection.get(&query_key).await {
@@ -84,10 +84,10 @@ impl SyncService {
                 let now = js_sys::Date::now();
                 let cache_age_ms = now - cached.timestamp;
                 const MAX_CACHE_AGE_MS: f64 = 5.0 * 60.0 * 1000.0; // 5 minutes
-                
+
                 if cache_age_ms < MAX_CACHE_AGE_MS {
                     log::info!("Cache HIT for query {}", query_key);
-                    
+
                     // Background refresh if cache is older than 1 minute
                     if cache_age_ms > 60.0 * 1000.0 {
                         let service = self.clone();
@@ -95,10 +95,12 @@ impl SyncService {
                         let search_bg = search.clone();
                         let category_bg = category.clone();
                         wasm_bindgen_futures::spawn_local(async move {
-                            let _ = service.fetch_and_cache(&db, page, per_page, search_bg, category_bg).await;
+                            let _ = service
+                                .fetch_and_cache(&db, page, per_page, search_bg, category_bg)
+                                .await;
                         });
                     }
-                    
+
                     return Ok((cached.products, cached.total, "cache"));
                 } else {
                     log::info!("Cache EXPIRED for query {}", query_key);
@@ -109,9 +111,10 @@ impl SyncService {
         } else {
             log::info!("Hard sync requested for query {}", query_key);
         }
-        
+
         // Fetch from backend and cache the result
-        self.fetch_and_cache(db, page, per_page, search, category).await
+        self.fetch_and_cache(db, page, per_page, search, category)
+            .await
     }
 
     /// Fetch from backend and store in query cache
@@ -124,10 +127,12 @@ impl SyncService {
         category: Option<String>,
     ) -> std::result::Result<(Vec<Product>, u64, &'static str), String> {
         let query_key = Self::query_key(page, per_page, &search, &category);
-        
+
         // Fetch from backend
-        let (products, total) = self.fetch_from_backend(page, per_page, search, category).await?;
-        
+        let (products, total) = self
+            .fetch_from_backend(page, per_page, search, category)
+            .await?;
+
         // Cache the query result
         let cache_collection: Collection<QueryCacheEntry> = db.collection("query_cache");
         let cache_entry = QueryCacheEntry {
@@ -138,16 +143,20 @@ impl SyncService {
             total,
             timestamp: js_sys::Date::now(),
         };
-        
+
         cache_collection
             .put(&query_key, &cache_entry)
             .await
             .map_err(|e| format!("Failed to cache query: {:?}", e))?;
-        
+
         // Also store individual products for offline access
         self.store_products_in_db(db, &products).await?;
-        
-        log::info!("Cached query {} with {} products", query_key, products.len());
+
+        log::info!(
+            "Cached query {} with {} products",
+            query_key,
+            products.len()
+        );
         Ok((products, total, "backend"))
     }
 
@@ -163,43 +172,47 @@ impl SyncService {
             "{}/products?page={}&per_page={}",
             self.api_url, page, per_page
         );
-        
+
         if !search.is_empty() {
             url.push_str(&format!("&search={}", urlencoding::encode(&search)));
         }
-        
+
         if let Some(cat) = category {
             url.push_str(&format!("&category={}", urlencoding::encode(&cat)));
         }
-        
+
         let response = Request::get(&url)
             .send()
             .await
             .map_err(|e| format!("Request failed: {:?}", e))?;
-        
+
         if !response.ok() {
             return Err(format!("HTTP error: {}", response.status()));
         }
-        
+
         let paginated: PaginatedResponse<Product> = response
             .json()
             .await
             .map_err(|e| format!("Failed to parse response: {:?}", e))?;
-        
+
         Ok((paginated.data, paginated.total))
     }
 
     /// Store products in IndexedDB (for offline access)
-    pub async fn store_products_in_db(&self, db: &Database, products: &[Product]) -> std::result::Result<(), String> {
+    pub async fn store_products_in_db(
+        &self,
+        db: &Database,
+        products: &[Product],
+    ) -> std::result::Result<(), String> {
         let products_collection: Collection<Product> = db.collection("products");
-        
+
         for product in products {
             products_collection
                 .put(&product.id, product)
                 .await
                 .map_err(|e| format!("Failed to store product {}: {:?}", product.id, e))?;
         }
-        
+
         // Update sync metadata
         let meta_collection: Collection<SyncMeta> = db.collection("sync_meta");
         let meta = SyncMeta {
@@ -211,7 +224,7 @@ impl SyncService {
             .put("last_sync", &meta)
             .await
             .map_err(|e| format!("Failed to store sync meta: {:?}", e))?;
-        
+
         log::info!("Stored {} products in IndexedDB", products.len());
         Ok(())
     }
@@ -241,7 +254,7 @@ impl SyncService {
             .clear()
             .await
             .map_err(|e| format!("Failed to clear query cache: {:?}", e))?;
-        
+
         log::info!("Cleared query cache");
         Ok(())
     }
@@ -253,19 +266,19 @@ impl SyncService {
             .clear()
             .await
             .map_err(|e| format!("Failed to clear IndexedDB: {:?}", e))?;
-        
+
         let meta_collection: Collection<SyncMeta> = db.collection("sync_meta");
         meta_collection
             .clear()
             .await
             .map_err(|e| format!("Failed to clear sync meta: {:?}", e))?;
-        
+
         let cache_collection: Collection<QueryCacheEntry> = db.collection("query_cache");
         cache_collection
             .clear()
             .await
             .map_err(|e| format!("Failed to clear query cache: {:?}", e))?;
-        
+
         log::info!("Cleared local storage");
         Ok(())
     }
@@ -273,37 +286,34 @@ impl SyncService {
     /// Background sync: Pull all changes from server
     pub async fn background_sync(&self, db: &Database) -> std::result::Result<usize, String> {
         let mut all_products = Vec::new();
-        
+
         for page in 1..=20 {
-            let url = format!(
-                "{}/products?page={}&per_page=5",
-                self.api_url, page
-            );
-            
+            let url = format!("{}/products?page={}&per_page=5", self.api_url, page);
+
             let response = Request::get(&url)
                 .send()
                 .await
                 .map_err(|e| format!("Request failed: {:?}", e))?;
-            
+
             if !response.ok() {
                 return Err(format!("HTTP error: {}", response.status()));
             }
-            
+
             let paginated: PaginatedResponse<Product> = response
                 .json()
                 .await
                 .map_err(|e| format!("Failed to parse response: {:?}", e))?;
-            
+
             if paginated.data.is_empty() {
                 break;
             }
-            
+
             all_products.extend(paginated.data);
         }
-        
+
         let count = all_products.len();
         self.store_products_in_db(db, &all_products).await?;
-        
+
         // Also cache individual page queries for the first few pages
         let cache_collection: Collection<QueryCacheEntry> = db.collection("query_cache");
         for page in 1..=5 {
@@ -324,23 +334,23 @@ impl SyncService {
             };
             let _ = cache_collection.put(&query_key, &cache_entry).await;
         }
-        
+
         Ok(count)
     }
 
     /// Get available categories from backend
     pub async fn get_categories(&self) -> std::result::Result<Vec<String>, String> {
         let url = format!("{}/products/categories", self.api_url);
-        
+
         let response = Request::get(&url)
             .send()
             .await
             .map_err(|e| format!("Request failed: {:?}", e))?;
-        
+
         if !response.ok() {
             return Err(format!("HTTP error: {}", response.status()));
         }
-        
+
         response
             .json()
             .await

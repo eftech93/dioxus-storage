@@ -40,10 +40,10 @@ impl MigrationSet for V3Migration {
     fn data_migration() -> Option<fn()> {
         Some(|| {
             log::info!("V3: Setting up archive functionality");
-            
+
             // Example: Migrate existing tasks with "deleted" flag to archived_tasks
             // This is where you'd put data transformation logic
-            
+
             log::info!("V3: Data migration complete");
         })
     }
@@ -53,8 +53,12 @@ impl MigrationSet for V3Migration {
 pub struct ArchivedTaskStore;
 
 impl ArchivedTaskStore {
-    pub fn name() -> &'static str { "archived_tasks" }
-    pub fn key_path() -> &'static str { "id" }
+    pub fn name() -> &'static str {
+        "archived_tasks"
+    }
+    pub fn key_path() -> &'static str {
+        "id"
+    }
 }
 
 /// Helper function to archive a task (move from tasks to archived_tasks)
@@ -67,7 +71,7 @@ pub async fn archive_task(
     // 2. Add archived_at timestamp
     // 3. Save to archived_tasks store
     // 4. Delete from tasks store
-    
+
     log::info!("Archiving task: {}", task_id);
     Ok(())
 }

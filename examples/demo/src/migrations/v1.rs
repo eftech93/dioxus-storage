@@ -40,6 +40,10 @@ impl MigrationSet for V1Migration {
 pub struct TaskStore;
 
 impl TaskStore {
-    pub fn name() -> &'static str { "tasks" }
-    pub fn key_path() -> &'static str { "id" }
+    pub fn name() -> &'static str {
+        "tasks"
+    }
+    pub fn key_path() -> &'static str {
+        "id"
+    }
 }

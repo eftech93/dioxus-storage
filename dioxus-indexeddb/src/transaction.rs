@@ -62,8 +62,15 @@ impl Transaction {
         }
 
         let idb_transaction = self.with_db(|db| {
-            db.transaction(&self.store_names.iter().map(|s| s.as_str()).collect::<Vec<_>>(), self.mode)
-                .map_err(|e| IndexedDbError::Transaction(e.to_string()))
+            db.transaction(
+                &self
+                    .store_names
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<_>>(),
+                self.mode,
+            )
+            .map_err(|e| IndexedDbError::Transaction(e.to_string()))
         })?;
 
         idb_transaction

@@ -248,10 +248,7 @@ impl Filter {
 
     /// Create IN filter
     pub fn is_in(field: impl Into<String>, values: Vec<impl Into<serde_json::Value>>) -> Self {
-        Filter::In(
-            field.into(),
-            values.into_iter().map(|v| v.into()).collect(),
-        )
+        Filter::In(field.into(), values.into_iter().map(|v| v.into()).collect())
     }
 
     /// Create BETWEEN filter
@@ -266,12 +263,8 @@ impl Filter {
     /// Check if a JSON value matches this filter
     fn matches(&self, json: &serde_json::Value) -> bool {
         match self {
-            Filter::Eq(field, value) => {
-                json.get(field).map(|v| v == value).unwrap_or(false)
-            }
-            Filter::Ne(field, value) => {
-                json.get(field).map(|v| v != value).unwrap_or(true)
-            }
+            Filter::Eq(field, value) => json.get(field).map(|v| v == value).unwrap_or(false),
+            Filter::Ne(field, value) => json.get(field).map(|v| v != value).unwrap_or(true),
             Filter::Gt(field, value) => {
                 compare_values(json.get(field), value) == Some(std::cmp::Ordering::Greater)
             }
@@ -319,18 +312,13 @@ impl Filter {
                     false
                 }
             }
-            Filter::IsNull(field) => {
-                json.get(field).map(|v| v.is_null()).unwrap_or(true)
-            }
-            Filter::IsNotNull(field) => {
-                json.get(field).map(|v| !v.is_null()).unwrap_or(false)
-            }
-            Filter::Regex(field, pattern) => {
-                json.get(field)
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.contains(pattern))
-                    .unwrap_or(false)
-            }
+            Filter::IsNull(field) => json.get(field).map(|v| v.is_null()).unwrap_or(true),
+            Filter::IsNotNull(field) => json.get(field).map(|v| !v.is_null()).unwrap_or(false),
+            Filter::Regex(field, pattern) => json
+                .get(field)
+                .and_then(|v| v.as_str())
+                .map(|s| s.contains(pattern))
+                .unwrap_or(false),
             Filter::And(filters) => filters.iter().all(|f| f.matches(json)),
             Filter::Or(filters) => filters.iter().any(|f| f.matches(json)),
         }
@@ -385,8 +373,9 @@ pub fn execute_query<T: Serialize + Clone + DeserializeOwned>(
             let json_b = serde_json::to_value(b).unwrap_or_default();
 
             let cmp = match (json_a.get(&order.field), json_b.get(&order.field)) {
-                (Some(va), Some(vb)) => compare_values(Some(va), vb)
-                    .unwrap_or(std::cmp::Ordering::Equal),
+                (Some(va), Some(vb)) => {
+                    compare_values(Some(va), vb).unwrap_or(std::cmp::Ordering::Equal)
+                }
                 (Some(_), None) => std::cmp::Ordering::Less,
                 (None, Some(_)) => std::cmp::Ordering::Greater,
                 _ => std::cmp::Ordering::Equal,

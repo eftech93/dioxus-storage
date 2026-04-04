@@ -48,23 +48,23 @@ mod local_storage;
 mod session_storage;
 mod storage;
 
-pub use error::{StorageError, Result};
-pub use local_storage::{LocalStorage, use_local_storage};
-pub use session_storage::{SessionStorage, use_session_storage};
-pub use storage::{Storage, use_storage, StorageConfig};
+pub use error::{Result, StorageError};
+pub use local_storage::{use_local_storage, LocalStorage};
+pub use session_storage::{use_session_storage, SessionStorage};
+pub use storage::{use_storage, Storage, StorageConfig};
 
 #[cfg(feature = "indexeddb")]
-pub use dioxus_indexeddb::{Database, DatabaseConfig as DbConfig, Collection};
+pub use dioxus_indexeddb::{Collection, Database, DatabaseConfig as DbConfig};
 
 /// Prelude module for convenient imports
 pub mod prelude {
-    pub use super::{Storage, StorageConfig, use_storage};
-    pub use super::{LocalStorage, use_local_storage};
-    pub use super::{SessionStorage, use_session_storage};
-    pub use super::{StorageError, Result};
-    
+    pub use super::{use_local_storage, LocalStorage};
+    pub use super::{use_session_storage, SessionStorage};
+    pub use super::{use_storage, Storage, StorageConfig};
+    pub use super::{Result, StorageError};
+
     #[cfg(feature = "indexeddb")]
-    pub use super::{Database, DbConfig, Collection};
+    pub use super::{Collection, Database, DbConfig};
 }
 
 // Re-export indexeddb types when feature is enabled

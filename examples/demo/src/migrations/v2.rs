@@ -42,6 +42,10 @@ impl MigrationSet for V2Migration {
 pub struct SettingsStore;
 
 impl SettingsStore {
-    pub fn name() -> &'static str { "settings" }
-    pub fn key_path() -> &'static str { "key" }
+    pub fn name() -> &'static str {
+        "settings"
+    }
+    pub fn key_path() -> &'static str {
+        "key"
+    }
 }

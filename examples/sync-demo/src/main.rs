@@ -5,10 +5,10 @@ mod components;
 mod models;
 mod sync;
 
-use components::{ProductCard, SyncLogViewer, FilterPanel, Pagination};
+use components::{FilterPanel, Pagination, ProductCard, SyncLogViewer};
 use models::Product;
-use sync::{SyncService, SyncMode};
 use models::SyncEvent;
+use sync::{SyncMode, SyncService};
 
 const API_URL: &str = "http://localhost:3001/api";
 
@@ -20,10 +20,10 @@ fn main() {
 #[component]
 fn App() -> Element {
     // IndexedDB state
-    let mut db = use_signal(|| None::<dioxus_indexeddb::Database>);
+    let mut db = use_signal(|| None::<dioxus_indexeddb::database::Database>);
     let mut local_product_count = use_signal(|| 0usize);
     let mut last_sync_time = use_signal(|| None::<String>);
-    
+
     // UI State
     let mut products = use_signal(Vec::<Product>::new);
     let mut filtered_products = use_signal(Vec::<Product>::new);
@@ -82,67 +82,76 @@ fn App() -> Element {
         let mode = *sync_mode.read();
         let db_signal = db.clone();
         let page = *current_page.read();
-        
+
         spawn(async move {
             is_loading.set(true);
             let service = SyncService::new(API_URL);
-            
+
             let start_time = web_time::Instant::now();
-            
+
             let result = if mode == SyncMode::Hot && !hard_sync {
                 if let Some(ref database) = *db_signal.read() {
-                    service.hot_sync_products(
-                        database,
-                        page, 
-                        5, 
-                        String::new(), 
-                        None,
-                        false, // allow cache
-                    ).await
+                    service
+                        .hot_sync_products(
+                            database,
+                            page,
+                            5,
+                            String::new(),
+                            None,
+                            false, // allow cache
+                        )
+                        .await
                 } else {
                     // Fallback to backend if IndexedDB not available
-                    service.fetch_from_backend(page, 5, String::new(), None)
+                    service
+                        .fetch_from_backend(page, 5, String::new(), None)
                         .await
                         .map(|(p, t)| (p, t, "backend"))
                 }
             } else {
                 // Hard sync or Background mode - fetch from backend
                 if let Some(ref database) = *db_signal.read() {
-                    service.hot_sync_products(
-                        database,
-                        page, 
-                        5, 
-                        String::new(), 
-                        None,
-                        true, // hard sync
-                    ).await
+                    service
+                        .hot_sync_products(
+                            database,
+                            page,
+                            5,
+                            String::new(),
+                            None,
+                            true, // hard sync
+                        )
+                        .await
                 } else {
-                    service.fetch_from_backend(page, 5, String::new(), None)
+                    service
+                        .fetch_from_backend(page, 5, String::new(), None)
                         .await
                         .map(|(p, t)| (p, t, "backend"))
                 }
             };
-            
+
             let duration = start_time.elapsed();
-            
+
             match result {
                 Ok((prods, total, source)) => {
                     let pages = ((total as f32) / 5.0).ceil() as u32;
                     products.set(prods.clone());
                     filtered_products.set(prods);
-                    
+
                     let action = if hard_sync { "Hard Sync" } else { "Fetch Page" };
-                    
-                    sync_events.write().insert(0, SyncEvent {
-                        timestamp: chrono::Local::now(),
-                        mode,
-                        action: action.to_string(),
-                        items_count: 5,
-                        duration_ms: duration.as_millis() as u64,
-                        success: true,
-                        message: format!("Page {} of {} (from {})", page, pages, source),
-                    });
-                    
+
+                    sync_events.write().insert(
+                        0,
+                        SyncEvent {
+                            timestamp: chrono::Local::now(),
+                            mode,
+                            action: action.to_string(),
+                            items_count: 5,
+                            duration_ms: duration.as_millis() as u64,
+                            success: true,
+                            message: format!("Page {} of {} (from {})", page, pages, source),
+                        },
+                    );
+
                     // Update local stats
                     if let Some(ref database) = *db_signal.read() {
                         if let Ok(local_prods) = SyncService::get_local_products(database).await {
@@ -151,18 +160,21 @@ fn App() -> Element {
                     }
                 }
                 Err(e) => {
-                    sync_events.write().insert(0, SyncEvent {
-                        timestamp: chrono::Local::now(),
-                        mode,
-                        action: "Fetch Failed".to_string(),
-                        items_count: 0,
-                        duration_ms: duration.as_millis() as u64,
-                        success: false,
-                        message: e.to_string(),
-                    });
+                    sync_events.write().insert(
+                        0,
+                        SyncEvent {
+                            timestamp: chrono::Local::now(),
+                            mode,
+                            action: "Fetch Failed".to_string(),
+                            items_count: 0,
+                            duration_ms: duration.as_millis() as u64,
+                            success: false,
+                            message: e.to_string(),
+                        },
+                    );
                 }
             }
-            
+
             is_loading.set(false);
         });
     });
@@ -172,58 +184,73 @@ fn App() -> Element {
         let mut products = products.clone();
         let mut sync_events = sync_events.clone();
         let db_signal = db.clone();
-        
+
         spawn(async move {
             let service = SyncService::new(API_URL);
             let start_time = web_time::Instant::now();
             let mut all_products = Vec::new();
-            
+
             for page in 1..=20 {
-                match service.fetch_from_backend(page, 5, String::new(), None).await {
+                match service
+                    .fetch_from_backend(page, 5, String::new(), None)
+                    .await
+                {
                     Ok((mut prods, _)) => {
                         all_products.append(&mut prods);
-                        sync_events.write().insert(0, SyncEvent {
-                            timestamp: chrono::Local::now(),
-                            mode: SyncMode::Hot,
-                            action: format!("Sync Page {}", page),
-                            items_count: prods.len(),
-                            duration_ms: start_time.elapsed().as_millis() as u64,
-                            success: true,
-                            message: format!("Page {}/20 fetched", page),
-                        });
+                        sync_events.write().insert(
+                            0,
+                            SyncEvent {
+                                timestamp: chrono::Local::now(),
+                                mode: SyncMode::Hot,
+                                action: format!("Sync Page {}", page),
+                                items_count: prods.len(),
+                                duration_ms: start_time.elapsed().as_millis() as u64,
+                                success: true,
+                                message: format!("Page {}/20 fetched", page),
+                            },
+                        );
                     }
                     Err(e) => {
-                        sync_events.write().insert(0, SyncEvent {
-                            timestamp: chrono::Local::now(),
-                            mode: SyncMode::Hot,
-                            action: format!("Page {} Failed", page),
-                            items_count: 0,
-                            duration_ms: start_time.elapsed().as_millis() as u64,
-                            success: false,
-                            message: e.to_string(),
-                        });
+                        sync_events.write().insert(
+                            0,
+                            SyncEvent {
+                                timestamp: chrono::Local::now(),
+                                mode: SyncMode::Hot,
+                                action: format!("Page {} Failed", page),
+                                items_count: 0,
+                                duration_ms: start_time.elapsed().as_millis() as u64,
+                                success: false,
+                                message: e.to_string(),
+                            },
+                        );
                         break;
                     }
                 }
                 gloo_timers::future::TimeoutFuture::new(50).await;
             }
-            
+
             let total_duration = start_time.elapsed();
-            
+
             // Store in IndexedDB
             if let Some(ref database) = *db_signal.read() {
                 match service.store_products_in_db(database, &all_products).await {
                     Ok(_) => {
-                        sync_events.write().insert(0, SyncEvent {
-                            timestamp: chrono::Local::now(),
-                            mode: SyncMode::Hot,
-                            action: "Full Sync Complete".to_string(),
-                            items_count: all_products.len(),
-                            duration_ms: total_duration.as_millis() as u64,
-                            success: true,
-                            message: format!("All {} products stored locally", all_products.len()),
-                        });
-                        
+                        sync_events.write().insert(
+                            0,
+                            SyncEvent {
+                                timestamp: chrono::Local::now(),
+                                mode: SyncMode::Hot,
+                                action: "Full Sync Complete".to_string(),
+                                items_count: all_products.len(),
+                                duration_ms: total_duration.as_millis() as u64,
+                                success: true,
+                                message: format!(
+                                    "All {} products stored locally",
+                                    all_products.len()
+                                ),
+                            },
+                        );
+
                         // Update stats
                         local_product_count.set(all_products.len());
                         let date = js_sys::Date::new_0();
@@ -235,56 +262,65 @@ fn App() -> Element {
                         )));
                     }
                     Err(e) => {
-                        sync_events.write().insert(0, SyncEvent {
-                            timestamp: chrono::Local::now(),
-                            mode: SyncMode::Hot,
-                            action: "Store Failed".to_string(),
-                            items_count: all_products.len(),
-                            duration_ms: total_duration.as_millis() as u64,
-                            success: false,
-                            message: e.to_string(),
-                        });
+                        sync_events.write().insert(
+                            0,
+                            SyncEvent {
+                                timestamp: chrono::Local::now(),
+                                mode: SyncMode::Hot,
+                                action: "Store Failed".to_string(),
+                                items_count: all_products.len(),
+                                duration_ms: total_duration.as_millis() as u64,
+                                success: false,
+                                message: e.to_string(),
+                            },
+                        );
                     }
                 }
             }
-            
+
             products.set(all_products);
         });
     });
-    
+
     // Clear local storage
     let clear_storage = use_callback(move |()| {
         let mut sync_events = sync_events.clone();
         let db_signal = db.clone();
         let mut local_count = local_product_count.clone();
         let mut last_sync = last_sync_time.clone();
-        
+
         spawn(async move {
             if let Some(ref database) = *db_signal.read() {
                 match SyncService::clear_local_storage(database).await {
                     Ok(_) => {
-                        sync_events.write().insert(0, SyncEvent {
-                            timestamp: chrono::Local::now(),
-                            mode: SyncMode::Hot,
-                            action: "Clear Storage".to_string(),
-                            items_count: 0,
-                            duration_ms: 0,
-                            success: true,
-                            message: "Local storage cleared".to_string(),
-                        });
+                        sync_events.write().insert(
+                            0,
+                            SyncEvent {
+                                timestamp: chrono::Local::now(),
+                                mode: SyncMode::Hot,
+                                action: "Clear Storage".to_string(),
+                                items_count: 0,
+                                duration_ms: 0,
+                                success: true,
+                                message: "Local storage cleared".to_string(),
+                            },
+                        );
                         local_count.set(0);
                         last_sync.set(None);
                     }
                     Err(e) => {
-                        sync_events.write().insert(0, SyncEvent {
-                            timestamp: chrono::Local::now(),
-                            mode: SyncMode::Hot,
-                            action: "Clear Failed".to_string(),
-                            items_count: 0,
-                            duration_ms: 0,
-                            success: false,
-                            message: e.to_string(),
-                        });
+                        sync_events.write().insert(
+                            0,
+                            SyncEvent {
+                                timestamp: chrono::Local::now(),
+                                mode: SyncMode::Hot,
+                                action: "Clear Failed".to_string(),
+                                items_count: 0,
+                                duration_ms: 0,
+                                success: false,
+                                message: e.to_string(),
+                            },
+                        );
                     }
                 }
             }
@@ -294,17 +330,18 @@ fn App() -> Element {
     // Search handler
     let on_search = move |query: String| {
         search_query.set(query.clone());
-        
+
         let all = products.read().clone();
         if query.is_empty() {
             filtered_products.set(all);
         } else {
-            let filtered: Vec<_> = all.into_iter()
+            let filtered: Vec<_> = all
+                .into_iter()
                 .filter(|p| {
-                    p.name.to_lowercase().contains(&query.to_lowercase()) ||
-                    p.description.to_lowercase().contains(&query.to_lowercase()) ||
-                    p.category.to_lowercase().contains(&query.to_lowercase()) ||
-                    p.brand.to_lowercase().contains(&query.to_lowercase())
+                    p.name.to_lowercase().contains(&query.to_lowercase())
+                        || p.description.to_lowercase().contains(&query.to_lowercase())
+                        || p.category.to_lowercase().contains(&query.to_lowercase())
+                        || p.brand.to_lowercase().contains(&query.to_lowercase())
                 })
                 .collect();
             filtered_products.set(filtered);
@@ -380,7 +417,7 @@ fn App() -> Element {
                         "🗑️ Clear Local"
                     }
                 }
-                
+
                 div { class: "storage-stats",
                     p { "📦 Local products: {local_product_count}" }
                     if let Some(time) = last_sync_time.read().as_ref() {

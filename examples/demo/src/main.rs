@@ -1,32 +1,14 @@
 //! Dioxus Storage Demo
 //!
-//! This example demonstrates the Prisma-like migration system with folder-based migrations.
-//!
-//! # Migration Structure
-//!
-//! ```
-//! src/migrations/
-//!   mod.rs      # Migration registry
-//!   v1.rs       # Initial schema (tasks store)
-//!   v2.rs       # Add settings store
-//!   v3.rs       # Add archived_tasks, remove old_temp
-//! ```
+//! This example demonstrates LocalStorage, SessionStorage, and IndexedDB.
 
 use dioxus::prelude::*;
-use dioxus_indexeddb::{
-    Database, DatabaseConfig, Collection, Migration, MigrationManager, MigrationOp,
-    IndexedDbError, Store, Schema, StoreDefinition, SchemaDatabase, define_store,
-};
 use dioxus_client_storage::{use_local_storage, use_session_storage};
+use dioxus_indexeddb::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-// Include our migrations module
-mod migrations;
-
 fn main() {
-    // Validate migrations on startup
-    migrations::validate_migrations();
     dioxus::launch(app);
 }
 
@@ -35,67 +17,12 @@ fn app() -> Element {
         style { "{CSS}" }
         div { class: "app",
             h1 { "Dioxus Storage Demo" }
-            p { class: "subtitle", "Prisma-like migrations with folder-based versioning" }
-            
+            p { class: "subtitle", "LocalStorage, SessionStorage, and IndexedDB" }
+
             div { class: "grid",
-                // LocalStorage Demo
                 LocalStorageDemo {}
-                
-                // SessionStorage Demo
                 SessionStorageDemo {}
-                
-                // IndexedDB Demo with Schema Migrations
                 IndexedDbDemo {}
-                
-                // Migration Info
-                MigrationInfo {}
-            }
-        }
-    }
-}
-
-// =============================================================================
-// Migration Info Card
-// =============================================================================
-
-#[component]
-fn MigrationInfo() -> Element {
-    rsx! {
-        div { class: "card migration-card",
-            h2 { "📋 Migration Structure" }
-            p { class: "description", "Folder-based migrations like Prisma/EF Core" }
-            
-            div { class: "file-tree",
-                div { class: "folder", "📁 src/migrations/" }
-                div { class: "file", "  📄 mod.rs - Registry" }
-                div { class: "file version", "  📄 v1.rs - Initial (tasks)" }
-                div { class: "file version", "  📄 v2.rs - Add settings" }
-                div { class: "file version", "  📄 v3.rs - Add archived_tasks" }
-            }
-            
-            h3 { "Type-Safe Stores" }
-            pre { class: "code",
-                "pub struct TaskStore;
-
-impl Store for TaskStore {{
-    fn store_name() -> &'static str {{ "tasks" }}
-    fn key_path() -> &'static str {{ "id" }}
-}}"
-            }
-            
-            h3 { "Migration Definition" }
-            pre { class: "code",
-                "impl MigrationSet for V2Migration {{
-    fn version() -> u32 {{ 2 }}
-    
-    fn operations() -> Vec<MigrationOp> {{
-        vec![MigrationOp::CreateStore {{
-            name: "settings".into(),
-            key_path: "key".into(),
-            auto_increment: false,
-        }}]
-    }}
-}}"
             }
         }
     }
@@ -119,7 +46,7 @@ fn LocalStorageDemo() -> Element {
         div { class: "card",
             h2 { "📦 LocalStorage" }
             p { class: "description", "Persistent key-value storage" }
-            
+
             div { class: "section",
                 label { "Theme:" }
                 select {
@@ -131,7 +58,7 @@ fn LocalStorageDemo() -> Element {
                 }
                 p { class: "value", "Current: {current_theme}" }
             }
-            
+
             div { class: "section",
                 label { "Username:" }
                 input {
@@ -140,7 +67,7 @@ fn LocalStorageDemo() -> Element {
                     oninput: move |e| username.set(e.value()),
                 }
             }
-            
+
             div { class: "section",
                 label { "Counter:" }
                 div { class: "row",
@@ -174,7 +101,7 @@ fn SessionStorageDemo() -> Element {
         div { class: "card",
             h2 { "⏱️ SessionStorage" }
             p { class: "description", "Per-session storage" }
-            
+
             div { class: "section",
                 label { "Session Token:" }
                 div { class: "row",
@@ -187,7 +114,7 @@ fn SessionStorageDemo() -> Element {
                 }
                 p { class: "hint", "Lost when tab closes" }
             }
-            
+
             div { class: "section",
                 label { "Temp Notes:" }
                 textarea {
@@ -200,7 +127,7 @@ fn SessionStorageDemo() -> Element {
 }
 
 // =============================================================================
-// IndexedDB Demo with Schema & Migrations
+// IndexedDB Demo
 // =============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -209,40 +136,15 @@ struct Task {
     title: String,
     description: String,
     completed: bool,
-    priority: Priority,
-    created_at: i64,
-}
-
-impl Store for Task {
-    fn store_name() -> &'static str {
-        "tasks"
-    }
-
-    fn key_path() -> &'static str {
-        "id"
-    }
-
-    fn key(&self) -> String {
-        self.id.clone()
-    }
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-enum Priority {
-    Low,
-    Medium,
-    High,
 }
 
 impl Task {
-    fn new(title: impl Into<String>, description: impl Into<String>, priority: Priority) -> Self {
+    fn new(title: impl Into<String>, description: impl Into<String>) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             title: title.into(),
             description: description.into(),
             completed: false,
-            priority,
-            created_at: js_sys::Date::now() as i64,
         }
     }
 }
@@ -254,13 +156,16 @@ fn IndexedDbDemo() -> Element {
     let mut loading = use_signal(|| false);
     let mut error_msg = use_signal(|| Option::<String>::None);
 
-    // Initialize database with migrations
+    // Initialize database
     use_effect(move || {
         spawn(async move {
             loading.set(true);
             error_msg.set(None);
 
-            match init_database_with_migrations().await {
+            let config = DatabaseConfig::new("demo_db", 1)
+                .with_store("tasks", "id");
+
+            match Database::open(config).await {
                 Ok(db) => {
                     let collection: Collection<Task> = db.collection("tasks");
                     match collection.get_all().await {
@@ -280,20 +185,21 @@ fn IndexedDbDemo() -> Element {
 
     let mut title_input = use_signal(|| "".to_string());
     let mut desc_input = use_signal(|| "".to_string());
-    let mut priority_input = use_signal(|| Priority::Medium);
 
     let add_task = move |_| {
         let title = title_input.read().clone();
-        if title.is_empty() { return; }
+        if title.is_empty() {
+            return;
+        }
 
-        let new_task = Task::new(title, desc_input.read().clone(), *priority_input.read());
+        let new_task = Task::new(title, desc_input.read().clone());
         let db = db_signal.read().clone();
         let mut tasks = tasks.clone();
 
         spawn(async move {
             if let Some(db) = db {
-                let collection: Collection<Task> = db.collection(Task::store_name());
-                if collection.put(&new_task.key(), &new_task).await.is_ok() {
+                let collection: Collection<Task> = db.collection("tasks");
+                if collection.put(&new_task.id, &new_task).await.is_ok() {
                     let mut current = tasks.read().clone();
                     current.push(new_task);
                     tasks.set(current);
@@ -312,8 +218,8 @@ fn IndexedDbDemo() -> Element {
 
         spawn(async move {
             if let Some(db) = db {
-                let collection: Collection<Task> = db.collection(Task::store_name());
-                if collection.put(&updated.key(), &updated).await.is_ok() {
+                let collection: Collection<Task> = db.collection("tasks");
+                if collection.put(&updated.id, &updated).await.is_ok() {
                     let mut current = tasks.read().clone();
                     if let Some(idx) = current.iter().position(|t| t.id == updated.id) {
                         current[idx] = updated;
@@ -330,7 +236,7 @@ fn IndexedDbDemo() -> Element {
 
         spawn(async move {
             if let Some(db) = db {
-                let collection: Collection<Task> = db.collection(Task::store_name());
+                let collection: Collection<Task> = db.collection("tasks");
                 if collection.delete(&task_id).await.is_ok() {
                     let mut current = tasks.read().clone();
                     current.retain(|t| t.id != task_id);
@@ -340,41 +246,20 @@ fn IndexedDbDemo() -> Element {
         });
     };
 
-    let clear_all = move |_| {
-        let db = db_signal.read().clone();
-        let mut tasks = tasks.clone();
-
-        spawn(async move {
-            if let Some(db) = db {
-                let collection: Collection<Task> = db.collection(Task::store_name());
-                if collection.clear().await.is_ok() {
-                    tasks.set(Vec::new());
-                }
-            }
-        });
-    };
-
     let current_title = title_input.read().clone();
     let current_desc = desc_input.read().clone();
-    let current_priority = *priority_input.read();
     let task_count = tasks.read().len();
 
     rsx! {
         div { class: "card indexeddb",
-            h2 { "🗄️ IndexedDB with Schema" }
-            
+            h2 { "🗄️ IndexedDB" }
+
             if *loading.read() {
-                div { class: "loading", "Initializing database with migrations..." }
+                div { class: "loading", "Initializing database..." }
             }
 
             if let Some(err) = error_msg.read().as_ref() {
                 div { class: "error", "{err}" }
-            }
-
-            div { class: "schema-info",
-                span { class: "badge", "DB: dioxus_client_storage_demo" }
-                span { class: "badge", "Version: {migrations::CURRENT_VERSION}" }
-                span { class: "badge", "Store: tasks" }
             }
 
             div { class: "form",
@@ -389,24 +274,7 @@ fn IndexedDbDemo() -> Element {
                     oninput: move |e| desc_input.set(e.value()),
                     rows: 2,
                 }
-                select {
-                    value: match current_priority {
-                        Priority::Low => "low",
-                        Priority::Medium => "medium",
-                        Priority::High => "high",
-                    },
-                    onchange: move |e| {
-                        priority_input.set(match e.value().as_str() {
-                            "low" => Priority::Low,
-                            "high" => Priority::High,
-                            _ => Priority::Medium,
-                        });
-                    },
-                    option { value: "low", "🟢 Low" }
-                    option { value: "medium", "🟡 Medium" }
-                    option { value: "high", "🔴 High" }
-                }
-                button { 
+                button {
                     onclick: add_task,
                     disabled: current_title.is_empty(),
                     "➕ Add Task"
@@ -415,14 +283,10 @@ fn IndexedDbDemo() -> Element {
 
             div { class: "task-list",
                 h3 { "Tasks ({task_count})" }
-                
+
                 if tasks.read().is_empty() {
                     p { class: "empty", "No tasks. Add one!" }
                 } else {
-                    div { class: "actions",
-                        button { class: "danger", onclick: clear_all, "🗑️ Clear All" }
-                    }
-                    
                     for task in tasks.read().iter().rev().cloned().collect::<Vec<_>>() {
                         TaskItem {
                             task: task.clone(),
@@ -437,28 +301,18 @@ fn IndexedDbDemo() -> Element {
 }
 
 #[component]
-fn TaskItem(
-    task: Task,
-    on_toggle: EventHandler<Task>,
-    on_delete: EventHandler<String>,
-) -> Element {
-    let priority_class = match task.priority {
-        Priority::Low => "priority-low",
-        Priority::Medium => "priority-medium",
-        Priority::High => "priority-high",
-    };
-
+fn TaskItem(task: Task, on_toggle: EventHandler<Task>, on_delete: EventHandler<String>) -> Element {
     let task_for_toggle = task.clone();
     let task_id = task.id.clone();
 
     rsx! {
-        div { 
-            class: "task {priority_class}",
+        div {
+            class: "task",
             class: if task.completed { "completed" } else { "" },
-            
+
             div { class: "task-content",
                 input {
-                    type: "checkbox",
+                    r#type: "checkbox",
                     checked: task.completed,
                     onchange: move |_| on_toggle.call(task_for_toggle.clone()),
                 }
@@ -467,47 +321,16 @@ fn TaskItem(
                     if !task.description.is_empty() {
                         span { class: "description", "{task.description}" }
                     }
-                    span { class: "meta", 
-                        "ID: {&task.id[..8]} | {format_time(task.created_at)}"
-                    }
                 }
             }
-            
-            button { 
+
+            button {
                 class: "delete-btn",
                 onclick: move |_| on_delete.call(task_id.clone()),
                 "🗑️"
             }
         }
     }
-}
-
-async fn init_database_with_migrations() -> Result<Database, IndexedDbError> {
-    // Build config from schema (all stores defined in migrations)
-    let mut config = DatabaseConfig::new("dioxus_client_storage_demo", migrations::CURRENT_VERSION);
-    
-    // Add stores defined in migrations
-    config = config.with_store("tasks", "id");
-    config = config.with_store("settings", "key");
-    config = config.with_store("archived_tasks", "id");
-
-    // Open with migrations
-    Database::open_with_migrations(
-        config,
-        migrations::registry().into_manager(),
-    ).await
-}
-
-fn format_time(timestamp: i64) -> String {
-    let date = js_sys::Date::new(&js_sys::Number::from(timestamp as f64));
-    format!(
-        "{:04}-{:02}-{:02} {:02}:{:02}",
-        date.get_full_year(),
-        date.get_month() + 1,
-        date.get_date(),
-        date.get_hours(),
-        date.get_minutes()
-    )
 }
 
 const CSS: &str = r#"
@@ -553,10 +376,6 @@ h1 {
 
 .card.indexeddb {
     grid-column: 1 / -1;
-}
-
-.card.migration-card {
-    background: #f8fafc;
 }
 
 h2 {
@@ -614,10 +433,6 @@ button:disabled {
     cursor: not-allowed;
 }
 
-button.danger {
-    background: #ef4444;
-}
-
 .row {
     display: flex;
     gap: 10px;
@@ -652,21 +467,6 @@ button.danger {
     color: #991b1b;
 }
 
-.schema-info {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
-}
-
-.badge {
-    padding: 4px 12px;
-    background: #e0e7ff;
-    color: #4338ca;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
-}
-
 .form {
     background: #f9fafb;
     padding: 20px;
@@ -681,10 +481,6 @@ button.danger {
     margin-bottom: 16px;
 }
 
-.actions {
-    margin-bottom: 16px;
-}
-
 .task {
     display: flex;
     align-items: flex-start;
@@ -693,12 +489,8 @@ button.danger {
     background: #f9fafb;
     border-radius: 8px;
     margin-bottom: 12px;
-    border-left: 4px solid #ccc;
+    border-left: 4px solid #3b82f6;
 }
-
-.task.priority-low { border-left-color: #22c55e; }
-.task.priority-medium { border-left-color: #f59e0b; }
-.task.priority-high { border-left-color: #ef4444; }
 
 .task.completed { opacity: 0.6; }
 .task.completed .title { text-decoration: line-through; }
@@ -733,11 +525,6 @@ button.danger {
     color: #666;
 }
 
-.task .meta {
-    font-size: 0.75rem;
-    color: #999;
-}
-
 .delete-btn {
     background: transparent;
     color: #ef4444;
@@ -747,40 +534,6 @@ button.danger {
 
 .delete-btn:hover {
     background: #fee2e2;
-}
-
-/* Migration card styles */
-.file-tree {
-    background: #1e293b;
-    color: #e2e8f0;
-    padding: 16px;
-    border-radius: 8px;
-    font-family: 'Monaco', 'Consolas', monospace;
-    font-size: 0.9rem;
-    margin-bottom: 20px;
-}
-
-.file-tree .folder {
-    color: #fbbf24;
-}
-
-.file-tree .file {
-    padding-left: 16px;
-}
-
-.file-tree .file.version {
-    color: #4ade80;
-}
-
-.code {
-    background: #1e293b;
-    color: #e2e8f0;
-    padding: 16px;
-    border-radius: 8px;
-    overflow-x: auto;
-    font-family: 'Monaco', 'Consolas', monospace;
-    font-size: 0.85rem;
-    line-height: 1.5;
 }
 
 .empty {

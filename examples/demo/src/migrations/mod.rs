@@ -38,7 +38,7 @@ pub const CURRENT_VERSION: u32 = 3;
 pub fn validate_migrations() {
     let registry = registry();
     let migrations = registry.migrations();
-    
+
     log::info!("Registered {} migrations:", migrations.len());
     for (i, m) in migrations.iter().enumerate() {
         log::info!("  Migration {}: version {}", i + 1, m.version);

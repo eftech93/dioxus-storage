@@ -89,8 +89,7 @@ impl Database {
         config: DatabaseConfig,
         migrations: MigrationManager,
     ) -> Result<Self> {
-        let factory = Factory::new()
-            .map_err(|_| IndexedDbError::NotAvailable)?;
+        let factory = Factory::new().map_err(|_| IndexedDbError::NotAvailable)?;
 
         let mut open_request = factory
             .open(&config.name, Some(config.version))
@@ -109,7 +108,11 @@ impl Database {
 
             // Get old version from event (0 if new database)
             let old_version = event.old_version().unwrap_or(0);
-            let new_version = event.new_version().ok().flatten().unwrap_or(old_version + 1);
+            let new_version = event
+                .new_version()
+                .ok()
+                .flatten()
+                .unwrap_or(old_version + 1);
 
             // Run migrations first
             if let Err(e) = migrations.run_migrations(&database, old_version, new_version) {
@@ -118,7 +121,7 @@ impl Database {
 
             // Then create any stores from config that don't exist yet
             let store_names = database.store_names();
-            
+
             for store_config in &stores {
                 // Check if store already exists
                 if store_names.contains(&store_config.name) {
@@ -143,7 +146,9 @@ impl Database {
             .await
             .map_err(|e| IndexedDbError::Database(e.to_string()))?;
 
-        Ok(Self { inner: Rc::new(RefCell::new(database)) })
+        Ok(Self {
+            inner: Rc::new(RefCell::new(database)),
+        })
     }
 
     /// Get a collection for the given store name
@@ -174,8 +179,9 @@ impl Database {
         let req = factory
             .delete(name)
             .map_err(|e| IndexedDbError::Database(e.to_string()))?;
-        
-        req.await.map_err(|e| IndexedDbError::Database(e.to_string()))?;
+
+        req.await
+            .map_err(|e| IndexedDbError::Database(e.to_string()))?;
 
         Ok(())
     }

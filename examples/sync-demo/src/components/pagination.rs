@@ -11,26 +11,26 @@ pub fn Pagination(
     }
 
     let mut pages_to_show = vec![];
-    
+
     // Always show first page
     pages_to_show.push(1);
-    
+
     // Show pages around current
     let start = (current_page.saturating_sub(2)).max(2);
     let end = (current_page + 2).min(total_pages - 1);
-    
+
     if start > 2 {
         pages_to_show.push(0); // Ellipsis
     }
-    
+
     for p in start..=end {
         pages_to_show.push(p);
     }
-    
+
     if end < total_pages - 1 {
         pages_to_show.push(0); // Ellipsis
     }
-    
+
     // Always show last page
     if total_pages > 1 {
         pages_to_show.push(total_pages);

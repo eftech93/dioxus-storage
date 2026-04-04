@@ -127,19 +127,23 @@ impl SyncConfig {
 
     /// Get full endpoint URL
     pub fn endpoint(&self, path: &str) -> String {
-        format!("{}/{}", self.api_url.trim_end_matches('/'), path.trim_start_matches('/'))
+        format!(
+            "{}/{}",
+            self.api_url.trim_end_matches('/'),
+            path.trim_start_matches('/')
+        )
     }
 
     /// Build headers for requests
     pub fn build_headers(&self) -> Vec<(String, String)> {
         let mut headers = self.headers.clone();
-        
+
         if let Some(token) = &self.auth_token {
             headers.push(("Authorization".to_string(), format!("Bearer {}", token)));
         }
-        
+
         headers.push(("Content-Type".to_string(), "application/json".to_string()));
-        
+
         headers
     }
 

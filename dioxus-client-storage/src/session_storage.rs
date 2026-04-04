@@ -1,6 +1,6 @@
 //! SessionStorage API
 
-use crate::error::{StorageError, Result};
+use crate::error::{Result, StorageError};
 use dioxus::hooks::*;
 use dioxus_signals::*;
 use serde::{de::DeserializeOwned, Serialize};
@@ -29,7 +29,7 @@ impl SessionStorage {
     /// Get an item
     pub fn get<T: DeserializeOwned>(key: &str) -> Result<Option<T>> {
         let storage = Self::storage()?;
-        
+
         let value = storage
             .get_item(key)
             .map_err(|_| StorageError::NotAvailable)?;
@@ -46,7 +46,7 @@ impl SessionStorage {
     /// Get a raw string item
     pub fn get_string(key: &str) -> Result<Option<String>> {
         let storage = Self::storage()?;
-        
+
         storage
             .get_item(key)
             .map_err(|_| StorageError::NotAvailable)
@@ -56,44 +56,42 @@ impl SessionStorage {
     pub fn set<T: Serialize>(key: &str, value: &T) -> Result<()> {
         let storage = Self::storage()?;
         let json = serde_json::to_string(value)?;
-        
+
         storage
             .set_item(key, &json)
             .map_err(|_| StorageError::QuotaExceeded)?;
-        
+
         Ok(())
     }
 
     /// Set a raw string item
     pub fn set_string(key: &str, value: &str) -> Result<()> {
         let storage = Self::storage()?;
-        
+
         storage
             .set_item(key, value)
             .map_err(|_| StorageError::QuotaExceeded)?;
-        
+
         Ok(())
     }
 
     /// Remove an item
     pub fn remove(key: &str) -> Result<()> {
         let storage = Self::storage()?;
-        
+
         storage
             .remove_item(key)
             .map_err(|_| StorageError::NotAvailable)?;
-        
+
         Ok(())
     }
 
     /// Clear all items
     pub fn clear() -> Result<()> {
         let storage = Self::storage()?;
-        
-        storage
-            .clear()
-            .map_err(|_| StorageError::NotAvailable)?;
-        
+
+        storage.clear().map_err(|_| StorageError::NotAvailable)?;
+
         Ok(())
     }
 
@@ -101,21 +99,21 @@ impl SessionStorage {
     pub fn keys() -> Result<Vec<String>> {
         let storage = Self::storage()?;
         let length = storage.length().map_err(|_| StorageError::NotAvailable)?;
-        
+
         let mut keys = Vec::new();
         for i in 0..length {
             if let Ok(Some(key)) = storage.key(i) {
                 keys.push(key);
             }
         }
-        
+
         Ok(keys)
     }
 
     /// Check if a key exists
     pub fn has(key: &str) -> Result<bool> {
         let storage = Self::storage()?;
-        
+
         storage
             .get_item(key)
             .map(|v| v.is_some())
@@ -129,14 +127,14 @@ pub fn use_session_storage<T: Serialize + DeserializeOwned + Clone>(
     default: T,
 ) -> Signal<T> {
     let key = key.into();
-    
+
     let initial = SessionStorage::get::<T>(&key)
         .ok()
         .flatten()
         .unwrap_or(default);
-    
+
     let signal = use_signal(|| initial);
-    
+
     {
         let key = key.clone();
         use_effect(move || {
@@ -146,7 +144,7 @@ pub fn use_session_storage<T: Serialize + DeserializeOwned + Clone>(
             }
         });
     }
-    
+
     signal
 }
 
@@ -155,10 +153,10 @@ pub fn use_session_storage_opt<T: Serialize + DeserializeOwned + Clone>(
     key: impl Into<String>,
 ) -> Signal<Option<T>> {
     let key = key.into();
-    
+
     let initial = SessionStorage::get::<T>(&key).ok().flatten();
     let signal = use_signal(|| initial);
-    
+
     {
         let key = key.clone();
         use_effect(move || {
@@ -177,6 +175,6 @@ pub fn use_session_storage_opt<T: Serialize + DeserializeOwned + Clone>(
             }
         });
     }
-    
+
     signal
 }

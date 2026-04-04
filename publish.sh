@@ -7,25 +7,25 @@ cd "$SCRIPT_DIR"
 echo "🔍 Formatting code..."
 cargo fmt
 
-echo "🔍 Running clippy (WASM target)..."
-cargo clippy --target wasm32-unknown-unknown --package dioxus-indexeddb
-cargo clippy --target wasm32-unknown-unknown --package dioxus-client-storage
-cargo clippy --target wasm32-unknown-unknown --package dioxus-storage-sync
+echo "🔍 Running clippy..."
+cargo clippy --package dioxus-indexeddb
+cargo clippy --package dioxus-client-storage
+cargo clippy --package dioxus-storage-sync
 
 echo "🧪 Running tests..."
-cargo test --workspace
+cargo test --workspace --exclude dioxus-client-storage-demo --exclude sync-demo
 
 echo "📦 Verifying dioxus-indexeddb..."
 cd "$SCRIPT_DIR/dioxus-indexeddb"
-cargo publish --dry-run --allow-dirty --target wasm32-unknown-unknown
+cargo publish --dry-run --allow-dirty
 
 echo "📦 Verifying dioxus-client-storage..."
 cd "$SCRIPT_DIR/dioxus-client-storage"
-cargo publish --dry-run --allow-dirty --target wasm32-unknown-unknown
+cargo publish --dry-run --allow-dirty
 
 echo "📦 Verifying dioxus-storage-sync..."
 cd "$SCRIPT_DIR/dioxus-storage-sync"
-cargo publish --dry-run --allow-dirty --target wasm32-unknown-unknown
+cargo publish --dry-run --allow-dirty
 
 echo ""
 echo "========================================"

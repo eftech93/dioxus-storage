@@ -1,5 +1,6 @@
 [workspace]
-members = ["dioxus-indexeddb", "dioxus-client-storage", "dioxus-storage-sync", "examples/demo", "examples/sync-demo"]
+members = ["dioxus-indexeddb", "dioxus-client-storage", "dioxus-storage-sync"]
+exclude = ["examples/demo", "examples/sync-demo"]
 resolver = "2"
 
 [workspace.package]

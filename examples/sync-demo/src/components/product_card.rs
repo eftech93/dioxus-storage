@@ -1,5 +1,5 @@
-use dioxus::prelude::*;
 use crate::models::Product;
+use dioxus::prelude::*;
 
 #[component]
 pub fn ProductCard(product: Product) -> Element {
@@ -9,14 +9,14 @@ pub fn ProductCard(product: Product) -> Element {
                 h4 { "{product.name}" }
                 span { class: "product-id", "#{product.id}" }
             }
-            
+
             div { class: "product-meta",
                 span { class: "category-badge", "{product.category}" }
                 span { class: "brand-badge", "{product.brand}" }
             }
-            
+
             p { class: "product-description", "{product.description}" }
-            
+
             div { class: "product-details",
                 div { class: "detail-item",
                     label { "Price:" }
@@ -38,7 +38,7 @@ pub fn ProductCard(product: Product) -> Element {
                     }
                 }
             }
-            
+
             div { class: "product-footer",
                 span { class: "color-badge", style: "background-color: {product.color.to_lowercase()}",
                     "{product.color}"

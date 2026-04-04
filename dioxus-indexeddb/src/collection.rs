@@ -24,7 +24,7 @@ impl<T: Serialize + DeserializeOwned> Collection<T> {
             _phantom: std::marker::PhantomData,
         }
     }
-    
+
     /// Access the database for operations
     fn with_db<F, R>(&self, f: F) -> R
     where

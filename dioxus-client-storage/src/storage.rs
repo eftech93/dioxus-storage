@@ -1,6 +1,6 @@
 //! Unified storage API
 
-use crate::error::{StorageError, Result};
+use crate::error::{Result, StorageError};
 use crate::local_storage::LocalStorage;
 use crate::session_storage::SessionStorage;
 use dioxus::hooks::*;
@@ -87,7 +87,7 @@ impl Storage {
     /// Get an item (sync for Local/Session, async for IndexedDB)
     pub fn get<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>> {
         let key = self.full_key(key);
-        
+
         match self.config.backend {
             StorageBackend::Local => LocalStorage::get(&key),
             StorageBackend::Session => SessionStorage::get(&key),
@@ -101,7 +101,7 @@ impl Storage {
     /// Set an item (sync for Local/Session)
     pub fn set<T: Serialize>(&self, key: &str, value: &T) -> Result<()> {
         let key = self.full_key(key);
-        
+
         match self.config.backend {
             StorageBackend::Local => LocalStorage::set(&key, value),
             StorageBackend::Session => SessionStorage::set(&key, value),
@@ -115,7 +115,7 @@ impl Storage {
     /// Remove an item
     pub fn remove(&self, key: &str) -> Result<()> {
         let key = self.full_key(key);
-        
+
         match self.config.backend {
             StorageBackend::Local => LocalStorage::remove(&key),
             StorageBackend::Session => SessionStorage::remove(&key),
@@ -156,14 +156,11 @@ pub fn use_storage_value<T: Serialize + DeserializeOwned + Clone>(
 ) -> Signal<T> {
     let key = key.into();
     let storage = storage.clone();
-    
-    let initial = storage.get::<T>(&key)
-        .ok()
-        .flatten()
-        .unwrap_or(default);
-    
+
+    let initial = storage.get::<T>(&key).ok().flatten().unwrap_or(default);
+
     let signal = use_signal(|| initial);
-    
+
     {
         let key = key.clone();
         let storage = storage.clone();
@@ -174,7 +171,7 @@ pub fn use_storage_value<T: Serialize + DeserializeOwned + Clone>(
             }
         });
     }
-    
+
     signal
 }
 

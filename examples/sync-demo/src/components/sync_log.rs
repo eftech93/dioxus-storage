@@ -1,13 +1,13 @@
-use dioxus::prelude::*;
-use crate::sync::SyncMode;
 use crate::models::SyncEvent;
+use crate::sync::SyncMode;
+use dioxus::prelude::*;
 
 #[component]
 pub fn SyncLogViewer(events: Vec<SyncEvent>) -> Element {
     rsx! {
         div { class: "sync-log",
             h3 { "📋 Sync Log" }
-            
+
             {if events.is_empty() {
                 rsx! {
                     div { class: "log-empty",
@@ -29,19 +29,19 @@ pub fn SyncLogViewer(events: Vec<SyncEvent>) -> Element {
 
 #[component]
 fn SyncLogEntry(event: SyncEvent) -> Element {
-    let class_name = if event.success { 
-        "log-entry success" 
-    } else { 
-        "log-entry error" 
+    let class_name = if event.success {
+        "log-entry success"
+    } else {
+        "log-entry error"
     };
-    
+
     let mode_label = match event.mode {
         SyncMode::Hot => "🔥 HOT",
         SyncMode::Background => "🌙 BG",
     };
-    
+
     let timestamp = event.timestamp.format("%H:%M:%S").to_string();
-    
+
     rsx! {
         div { class: "{class_name}",
             div { class: "log-header",

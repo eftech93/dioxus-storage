@@ -46,7 +46,7 @@ pub use client::{HttpClient, SyncClient};
 pub use config::{ConflictResolution, SyncConfig, SyncMode};
 pub use manager::{SyncManager, SyncStatus};
 pub use sync_engine::{SyncEngine, SyncResult};
-pub use traits::{Syncable, BackendAdapter};
+pub use traits::{BackendAdapter, Syncable};
 
 /// Result type for sync operations
 pub type Result<T> = std::result::Result<T, SyncError>;
@@ -56,28 +56,28 @@ pub type Result<T> = std::result::Result<T, SyncError>;
 pub enum SyncError {
     #[error("HTTP error: {0}")]
     Http(String),
-    
+
     #[error("Serialization error: {0}")]
     Serialization(String),
-    
+
     #[error("IndexedDB error: {0}")]
     IndexedDb(String),
-    
+
     #[error("Conflict detected: {0}")]
     Conflict(String),
-    
+
     #[error("Sync not configured")]
     NotConfigured,
-    
+
     #[error("Backend unavailable")]
     BackendUnavailable,
-    
+
     #[error("Authentication required")]
     Unauthorized,
-    
+
     #[error("Rate limited")]
     RateLimited,
-    
+
     #[error("Unknown error: {0}")]
     Unknown(String),
 }
@@ -102,11 +102,11 @@ impl From<dioxus_indexeddb::IndexedDbError> for SyncError {
 
 /// Prelude for convenient imports
 pub mod prelude {
-    pub use super::{SyncConfig, SyncMode, ConflictResolution};
-    pub use super::{SyncManager, SyncStatus};
-    pub use super::{SyncEngine, SyncResult};
     pub use super::{BackendAdapter, Syncable};
+    pub use super::{ConflictResolution, SyncConfig, SyncMode};
     pub use super::{HttpClient, SyncClient};
-    pub use super::{SyncError, Result};
+    pub use super::{Result, SyncError};
+    pub use super::{SyncEngine, SyncResult};
+    pub use super::{SyncManager, SyncStatus};
     pub use dioxus_signals::Signal;
 }

@@ -1,6 +1,6 @@
 [package]
 name = "dioxus-storage-sync"
-version.workspace = true
+version = "0.0.1"
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
@@ -16,7 +16,7 @@ description = "Backend synchronization for dioxus-storage with hot and backgroun
 # Core
 dioxus = { workspace = true }
 dioxus-signals = { workspace = true }
-dioxus-indexeddb = { path = "../dioxus-indexeddb" }
+dioxus-indexeddb = { path = "../dioxus-indexeddb", version = "0.0.1" }
 
 # WASM
 wasm-bindgen = { workspace = true }

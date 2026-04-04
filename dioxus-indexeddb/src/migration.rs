@@ -34,11 +34,7 @@ impl Migration {
     }
 
     /// Create a store
-    pub fn create_store(
-        mut self,
-        name: impl Into<String>,
-        key_path: impl Into<String>,
-    ) -> Self {
+    pub fn create_store(mut self, name: impl Into<String>, key_path: impl Into<String>) -> Self {
         self.operations.push(MigrationOp::CreateStore {
             name: name.into(),
             key_path: key_path.into(),
@@ -63,9 +59,8 @@ impl Migration {
 
     /// Delete a store
     pub fn delete_store(mut self, name: impl Into<String>) -> Self {
-        self.operations.push(MigrationOp::DeleteStore {
-            name: name.into(),
-        });
+        self.operations
+            .push(MigrationOp::DeleteStore { name: name.into() });
         self
     }
 
@@ -106,7 +101,12 @@ impl Migration {
     }
 
     /// Execute this migration
-    pub(crate) fn execute(&self, db: &IdbDatabase, old_version: u32, new_version: u32) -> Result<()> {
+    pub(crate) fn execute(
+        &self,
+        db: &IdbDatabase,
+        old_version: u32,
+        new_version: u32,
+    ) -> Result<()> {
         // Only run if this migration applies to the upgrade path
         if self.version > old_version && self.version <= new_version {
             log::info!(
@@ -141,9 +141,7 @@ pub enum MigrationOp {
         auto_increment: bool,
     },
     /// Delete an object store
-    DeleteStore {
-        name: String,
-    },
+    DeleteStore { name: String },
     /// Create an index
     CreateIndex {
         store_name: String,
@@ -177,11 +175,9 @@ impl MigrationOp {
                 params.key_path(Some(KeyPath::new_single(key_path)));
                 params.auto_increment(*auto_increment);
 
-                db.create_object_store(name, params)
-                    .map_err(|e| IndexedDbError::Database(format!(
-                        "Failed to create store '{}': {:?}",
-                        name, e
-                    )))?;
+                db.create_object_store(name, params).map_err(|e| {
+                    IndexedDbError::Database(format!("Failed to create store '{}': {:?}", name, e))
+                })?;
 
                 log::info!("Created store '{}'", name);
                 Ok(())
@@ -193,11 +189,9 @@ impl MigrationOp {
                     return Ok(());
                 }
 
-                db.delete_object_store(name)
-                    .map_err(|e| IndexedDbError::Database(format!(
-                        "Failed to delete store '{}': {:?}",
-                        name, e
-                    )))?;
+                db.delete_object_store(name).map_err(|e| {
+                    IndexedDbError::Database(format!("Failed to delete store '{}': {:?}", name, e))
+                })?;
 
                 log::info!("Deleted store '{}'", name);
                 Ok(())

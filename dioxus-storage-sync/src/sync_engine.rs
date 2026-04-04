@@ -38,19 +38,19 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
         if !self.config.is_hot_sync_enabled() {
             return Ok(Vec::new());
         }
-        
+
         log::info!("Performing hot sync");
-        
+
         // Fetch from backend (simplified - no query params)
         let items: Vec<T> = self.client.fetch_with_retry("items", None).await?;
-        
+
         // Store locally
         for item in &items {
             let mut item = item.clone();
             item.mark_synced();
             let _ = self.collection.put(&item.sync_id(), &item).await;
         }
-        
+
         Ok(items)
     }
 
@@ -61,11 +61,11 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
             Ok(Some(item)) => return Ok(Some(item)),
             _ => {}
         }
-        
+
         // If hot sync enabled, fetch from backend
         if self.config.is_hot_sync_enabled() {
             log::info!("Item {} not found locally, fetching from backend", id);
-            
+
             let path = format!("items/{}", id);
             match self.client.get(&path).await {
                 Ok(item) => {
@@ -79,7 +79,7 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
                 Err(e) => return Err(e),
             }
         }
-        
+
         Ok(None)
     }
 
@@ -88,18 +88,18 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
         if !self.config.is_background_sync_enabled() {
             return Ok(SyncResult::default());
         }
-        
+
         log::info!("Starting background sync");
-        
+
         let mut result = SyncResult::default();
-        
+
         match self.config.mode {
             SyncMode::PullOnly | SyncMode::Bidirectional => {
                 result = self.pull_from_backend().await?;
             }
             _ => {}
         }
-        
+
         match self.config.mode {
             SyncMode::PushOnly | SyncMode::Bidirectional => {
                 let push_result = self.push_to_backend().await?;
@@ -107,7 +107,7 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
             }
             _ => {}
         }
-        
+
         log::info!("Background sync complete: {:?}", result);
         Ok(result)
     }
@@ -120,24 +120,26 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
             conflicts: 0,
             errors: Vec::new(),
         };
-        
+
         // Get last sync timestamp
         let since = self.get_last_sync_timestamp().await?;
-        
+
         // Build params
         let params = since.map(|ts| serde_json::json!({ "since": ts }));
-        
+
         // Fetch from backend
         let items: Vec<T> = if let Some(p) = params {
             self.client.fetch_with_retry("items/sync", Some(&p)).await?
         } else {
-            self.client.fetch_with_retry::<Vec<T>>("items", None).await?
+            self.client
+                .fetch_with_retry::<Vec<T>>("items", None)
+                .await?
         };
-        
+
         // Merge into local DB
         for item in items {
             let id = item.sync_id();
-            
+
             match self.merge_item(item).await {
                 Ok(MergeResult::Inserted) => result.pulled += 1,
                 Ok(MergeResult::Updated) => result.pulled += 1,
@@ -148,10 +150,10 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
                 }
             }
         }
-        
+
         // Update last sync timestamp
         self.update_last_sync_timestamp().await?;
-        
+
         Ok(result)
     }
 
@@ -163,31 +165,34 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
             conflicts: 0,
             errors: Vec::new(),
         };
-        
+
         // Get dirty items
-        let local_items = self.collection.get_all().await
+        let local_items = self
+            .collection
+            .get_all()
+            .await
             .map_err(|e| SyncError::IndexedDb(e.to_string()))?;
-        
+
         let dirty_items: Vec<T> = local_items
             .into_iter()
             .filter(|item| item.is_dirty())
             .collect();
-        
+
         if dirty_items.is_empty() {
             log::info!("No local changes to push");
             return Ok(result);
         }
-        
+
         log::info!("Pushing {} items to backend", dirty_items.len());
-        
+
         // Push in batches
         for chunk in dirty_items.chunks(self.config.batch_size) {
             let path = "items/batch";
-            
+
             match self.client.post::<serde_json::Value, _>(path, &chunk).await {
                 Ok(_) => {
                     result.pushed += chunk.len();
-                    
+
                     // Mark as synced locally
                     for item in chunk {
                         let mut item = item.clone();
@@ -200,14 +205,14 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
                 }
             }
         }
-        
+
         Ok(result)
     }
 
     /// Merge a single item from backend
     async fn merge_item(&self, backend_item: T) -> Result<MergeResult> {
         let id = backend_item.sync_id();
-        
+
         match self.collection.get(&id).await {
             Ok(Some(local_item)) => {
                 // Check for conflicts
@@ -218,7 +223,9 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
                             // Replace with backend version
                             let mut item = backend_item;
                             item.mark_synced();
-                            self.collection.put(&id, &item).await
+                            self.collection
+                                .put(&id, &item)
+                                .await
                                 .map_err(|e| SyncError::IndexedDb(e.to_string()))?;
                             Ok(MergeResult::Updated)
                         }
@@ -229,11 +236,13 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
                         ConflictResolution::LastWriteWins => {
                             let backend_time = backend_item.sync_timestamp();
                             let local_time = local_item.sync_timestamp();
-                            
+
                             if backend_time > local_time {
                                 let mut item = backend_item;
                                 item.mark_synced();
-                                self.collection.put(&id, &item).await
+                                self.collection
+                                    .put(&id, &item)
+                                    .await
                                     .map_err(|e| SyncError::IndexedDb(e.to_string()))?;
                                 Ok(MergeResult::Updated)
                             } else {
@@ -249,7 +258,9 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
                     // No local changes, accept backend version
                     let mut item = backend_item;
                     item.mark_synced();
-                    self.collection.put(&id, &item).await
+                    self.collection
+                        .put(&id, &item)
+                        .await
                         .map_err(|e| SyncError::IndexedDb(e.to_string()))?;
                     Ok(MergeResult::Updated)
                 }
@@ -258,7 +269,9 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
                 // New item from backend
                 let mut item = backend_item;
                 item.mark_synced();
-                self.collection.put(&id, &item).await
+                self.collection
+                    .put(&id, &item)
+                    .await
                     .map_err(|e| SyncError::IndexedDb(e.to_string()))?;
                 Ok(MergeResult::Inserted)
             }
@@ -291,13 +304,13 @@ impl Syncable for SyncMetadata {
     fn sync_id(&self) -> String {
         self.id.clone()
     }
-    
+
     fn sync_timestamp(&self) -> i64 {
         self.timestamp
     }
-    
+
     fn mark_synced(&mut self) {}
-    
+
     fn is_dirty(&self) -> bool {
         false
     }
@@ -320,7 +333,7 @@ impl SyncResult {
         self.conflicts += other.conflicts;
         self.errors.extend(other.errors);
     }
-    
+
     /// Check if sync was successful
     pub fn is_success(&self) -> bool {
         self.errors.is_empty()

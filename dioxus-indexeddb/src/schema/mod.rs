@@ -120,10 +120,7 @@ pub trait Schema {
 
     /// Get store names
     fn store_names() -> Vec<String> {
-        Self::stores()
-            .into_iter()
-            .map(|s| s.name)
-            .collect()
+        Self::stores().into_iter().map(|s| s.name).collect()
     }
 }
 

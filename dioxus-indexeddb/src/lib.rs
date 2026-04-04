@@ -44,20 +44,23 @@ pub use collection::Collection;
 pub use database::{Database, DatabaseConfig};
 pub use error::{IndexedDbError, Result};
 pub use hooks::{use_collection, use_db, use_query};
-pub use migration::{Migration, MigrationManager, MigrationOp, DatabaseBuilder};
-pub use query::{Query, QueryResult, Filter, FilterMode, Order, OrderClause, Aggregation, Pagination, execute_query};
+pub use migration::{DatabaseBuilder, Migration, MigrationManager, MigrationOp};
+pub use query::{
+    execute_query, Aggregation, Filter, FilterMode, Order, OrderClause, Pagination, Query,
+    QueryResult,
+};
 pub use transaction::Transaction;
 
-pub use schema::{Store, Schema, StoreDefinition, SchemaDatabase};
+pub use schema::{Schema, SchemaDatabase, Store, StoreDefinition};
 
 /// Prelude module for convenient imports
 pub mod prelude {
-    pub use super::{Collection, Database, DatabaseConfig, IndexedDbError, Result};
-    pub use super::{use_collection, use_db, use_query};
-    pub use super::{Query, QueryResult, Filter, Order, execute_query};
-    pub use super::{Migration, MigrationManager, MigrationOp, DatabaseBuilder};
-    pub use super::schema::{Store, Schema, StoreDefinition, SchemaDatabase};
     pub use super::schema::migration_set::{MigrationRegistry, MigrationSet, SchemaMigration};
+    pub use super::schema::{Schema, SchemaDatabase, Store, StoreDefinition};
+    pub use super::{execute_query, Filter, Order, Query, QueryResult};
+    pub use super::{use_collection, use_db, use_query};
+    pub use super::{Collection, Database, DatabaseConfig, IndexedDbError, Result};
+    pub use super::{DatabaseBuilder, Migration, MigrationManager, MigrationOp};
 }
 
 use wasm_bindgen::JsValue;
