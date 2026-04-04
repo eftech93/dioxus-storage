@@ -2,6 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/dioxus-indexeddb.svg)](https://crates.io/crates/dioxus-indexeddb)
 [![Docs.rs](https://docs.rs/dioxus-indexeddb/badge.svg)](https://docs.rs/dioxus-indexeddb)
+[![Documentation](https://img.shields.io/badge/docs-eftech93.github.io/dioxus--storage-9D6B4C.svg)](https://eftech93.github.io/dioxus-storage)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
 
 High-level IndexedDB bindings for Dioxus with reactive hooks and type-safe collections.

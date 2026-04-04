@@ -1,5 +1,7 @@
 # Dioxus Storage
 
+[![Documentation](https://img.shields.io/badge/docs-eftech93.github.io/dioxus--storage-9D6B4C.svg)](https://eftech93.github.io/dioxus-storage)
+
 Type-safe storage solutions for Dioxus web applications.
 
 ## Crates
@@ -42,12 +44,12 @@ fn UserList() -> Element {
 - Multi-store transactions
 - Async/await API
 
-### `dioxus-storage`
+### `dioxus-client-storage`
 
 Unified storage API supporting LocalStorage, SessionStorage, and IndexedDB.
 
 ```rust
-use dioxus_storage::prelude::*;
+use dioxus_client_storage::prelude::*;
 
 #[component]
 fn App() -> Element {
@@ -71,12 +73,12 @@ fn App() -> Element {
 - `IndexedDB` integration via `dioxus-indexeddb`
 - Reactive hooks that sync with storage
 
-### `dioxus-storage-sync`
+### `dioxus-client-storage-sync`
 
 Two-way synchronization between local IndexedDB and backend API.
 
 ```rust
-use dioxus_storage_sync::prelude::*;
+use dioxus_client_storage_sync::prelude::*;
 
 #[component]
 fn ProductList() -> Element {
@@ -133,15 +135,15 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-dioxus-storage = { git = "https://github.com/eftech93/dioxus-storage" }
+dioxus-client-storage = { git = "https://github.com/eftech93/dioxus-client-storage" }
 ```
 
 Or use individual crates:
 
 ```toml
 [dependencies]
-dioxus-indexeddb = { git = "https://github.com/eftech93/dioxus-storage", package = "dioxus-indexeddb" }
-dioxus-storage-sync = { git = "https://github.com/eftech93/dioxus-storage", package = "dioxus-storage-sync" }
+dioxus-indexeddb = { git = "https://github.com/eftech93/dioxus-client-storage", package = "dioxus-indexeddb" }
+dioxus-client-storage-sync = { git = "https://github.com/eftech93/dioxus-client-storage", package = "dioxus-client-storage-sync" }
 ```
 
 ## Migrations
@@ -188,16 +190,16 @@ Migration operations:
 ## Workspace Structure
 
 ```
-dioxus-storage/
+dioxus-client-storage/
 ├── Cargo.toml              # Workspace root
 ├── README.md
 ├── dioxus-indexeddb/       # IndexedDB with hooks
 │   ├── Cargo.toml
 │   └── src/
-├── dioxus-storage/         # Unified storage API
+├── dioxus-client-storage/         # Unified storage API
 │   ├── Cargo.toml
 │   └── src/
-├── dioxus-storage-sync/    # Sync with backend
+├── dioxus-client-storage-sync/    # Sync with backend
 │   ├── Cargo.toml
 │   └── src/
 └── examples/

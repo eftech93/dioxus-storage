@@ -31,7 +31,7 @@ Dioxus Storage is organized into three layers:
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                      Sync Layer (optional)                       │
-│              dioxus-storage-sync                                 │
+│              dioxus-client-storage-sync                                 │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │  Hot Sync  │  Background Sync  │  Conflict Resolution   │   │
 │  └──────────────────────────────────────────────────────────┘   │
@@ -55,24 +55,24 @@ dioxus-indexeddb
 └── schema/          # Schema definitions
 ```
 
-### dioxus-storage
+### dioxus-client-storage
 
 Unified API that wraps IndexedDB, LocalStorage, and SessionStorage.
 
 ```
-dioxus-storage
+dioxus-client-storage
 ├── storage.rs           # Generic storage trait
 ├── local_storage.rs     # LocalStorage implementation
 ├── session_storage.rs   # SessionStorage implementation
 └── re-exports           # From dioxus-indexeddb (optional)
 ```
 
-### dioxus-storage-sync
+### dioxus-client-storage-sync
 
 Backend synchronization built on top of IndexedDB.
 
 ```
-dioxus-storage-sync
+dioxus-client-storage-sync
 ├── sync_engine.rs    # Core sync logic
 ├── manager.rs        # Sync manager with hooks
 ├── client.rs         # HTTP client

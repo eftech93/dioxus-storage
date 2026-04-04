@@ -19,14 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Database migrations
 - Async/await API
 
-#### dioxus-storage
+#### dioxus-client-storage
 - Unified storage API
 - `LocalStorage` - Persistent key-value storage
 - `SessionStorage` - Per-session key-value storage
 - `use_local_storage`, `use_session_storage` hooks
 - IndexedDB integration via `dioxus-indexeddb`
 
-#### dioxus-storage-sync
+#### dioxus-client-storage-sync
 - Hot sync mode - On-demand fetching with local cache
 - Background sync mode - Periodic synchronization
 - Conflict resolution strategies
@@ -38,4 +38,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sync demo with MongoDB backend
 - Complete documentation with docsify
 
-[0.0.1]: https://github.com/eftech93/dioxus-storage/releases/tag/v0.0.1
+[0.0.1]: https://github.com/eftech93/dioxus-client-storage/releases/tag/v0.0.1

@@ -1,5 +1,7 @@
 # Dioxus Storage
 
+[![Documentation](https://img.shields.io/badge/docs-eftech93.github.io/dioxus--storage-9D6B4C.svg)](https://eftech93.github.io/dioxus-storage)
+
 > Type-safe storage solutions for Dioxus web applications
 
 Dioxus Storage is a collection of crates providing unified, type-safe storage APIs for Dioxus web applications. It supports IndexedDB, LocalStorage, SessionStorage, and backend synchronization.
@@ -44,7 +46,7 @@ fn UserList() -> Element {
 - Multi-store transactions
 - Async/await API
 
-### `dioxus-storage` [![crates.io](https://img.shields.io/crates/v/dioxus-storage.svg)](https://crates.io/crates/dioxus-storage)
+### `dioxus-client-storage` [![crates.io](https://img.shields.io/crates/v/dioxus-client-storage.svg)](https://crates.io/crates/dioxus-client-storage)
 
 Unified storage API supporting LocalStorage, SessionStorage, and IndexedDB.
 
@@ -73,7 +75,7 @@ fn App() -> Element {
 - `IndexedDB` integration via `dioxus-indexeddb`
 - Reactive hooks that sync with storage
 
-### `dioxus-storage-sync` [![crates.io](https://img.shields.io/crates/v/dioxus-storage-sync.svg)](https://crates.io/crates/dioxus-storage-sync)
+### `dioxus-client-storage-sync` [![crates.io](https://img.shields.io/crates/v/dioxus-client-storage-sync.svg)](https://crates.io/crates/dioxus-client-storage-sync)
 
 Two-way synchronization between local IndexedDB and backend API.
 
@@ -107,7 +109,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-dioxus-storage = "0.0.1"
+dioxus-client-storage = "0.0.1"
 ```
 
 Or use individual crates:
@@ -115,7 +117,7 @@ Or use individual crates:
 ```toml
 [dependencies]
 dioxus-indexeddb = "0.0.1"
-dioxus-storage-sync = "0.0.1"
+dioxus-client-storage-sync = "0.0.1"
 ```
 
 ## Examples
@@ -139,12 +141,12 @@ dx serve --platform web
 ## Workspace Structure
 
 ```
-dioxus-storage/
+dioxus-client-storage/
 ├── Cargo.toml              # Workspace root
 ├── README.md
 ├── dioxus-indexeddb/       # IndexedDB with hooks
-├── dioxus-storage/         # Unified storage API
-├── dioxus-storage-sync/    # Sync with backend
+├── dioxus-client-storage/         # Unified storage API
+├── dioxus-client-storage-sync/    # Sync with backend
 └── examples/
     ├── demo/               # Basic storage demo
     └── sync-demo/          # Full sync demo

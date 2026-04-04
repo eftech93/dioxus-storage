@@ -17,7 +17,7 @@ use dioxus_indexeddb::{
     Database, DatabaseConfig, Collection, Migration, MigrationManager, MigrationOp,
     IndexedDbError, Store, Schema, StoreDefinition, SchemaDatabase, define_store,
 };
-use dioxus_storage::{use_local_storage, use_session_storage};
+use dioxus_client_storage::{use_local_storage, use_session_storage};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -372,7 +372,7 @@ fn IndexedDbDemo() -> Element {
             }
 
             div { class: "schema-info",
-                span { class: "badge", "DB: dioxus_storage_demo" }
+                span { class: "badge", "DB: dioxus_client_storage_demo" }
                 span { class: "badge", "Version: {migrations::CURRENT_VERSION}" }
                 span { class: "badge", "Store: tasks" }
             }
@@ -484,7 +484,7 @@ fn TaskItem(
 
 async fn init_database_with_migrations() -> Result<Database, IndexedDbError> {
     // Build config from schema (all stores defined in migrations)
-    let mut config = DatabaseConfig::new("dioxus_storage_demo", migrations::CURRENT_VERSION);
+    let mut config = DatabaseConfig::new("dioxus_client_storage_demo", migrations::CURRENT_VERSION);
     
     // Add stores defined in migrations
     config = config.with_store("tasks", "id");

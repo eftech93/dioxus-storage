@@ -1,4 +1,4 @@
-//! Error types for dioxus-storage
+//! Error types for dioxus-client-storage
 
 use thiserror::Error;
 

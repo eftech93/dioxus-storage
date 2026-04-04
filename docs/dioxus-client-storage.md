@@ -1,4 +1,4 @@
-# dioxus-storage
+# dioxus-client-storage
 
 Unified storage API supporting LocalStorage, SessionStorage, and IndexedDB.
 
@@ -6,14 +6,14 @@ Unified storage API supporting LocalStorage, SessionStorage, and IndexedDB.
 
 ```toml
 [dependencies]
-dioxus-storage = "0.0.1"
+dioxus-client-storage = "0.0.1"
 ```
 
 Or with specific features:
 
 ```toml
 [dependencies]
-dioxus-storage = { version = "0.0.1", default-features = false, features = ["indexeddb"] }
+dioxus-client-storage = { version = "0.0.1", default-features = false, features = ["indexeddb"] }
 ```
 
 ## Features

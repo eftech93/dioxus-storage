@@ -1,7 +1,8 @@
-# dioxus-storage
+# dioxus-client-storage
 
-[![Crates.io](https://img.shields.io/crates/v/dioxus-storage.svg)](https://crates.io/crates/dioxus-storage)
-[![Docs.rs](https://docs.rs/dioxus-storage/badge.svg)](https://docs.rs/dioxus-storage)
+[![Crates.io](https://img.shields.io/crates/v/dioxus-client-storage.svg)](https://crates.io/crates/dioxus-client-storage)
+[![Docs.rs](https://docs.rs/dioxus-client-storage/badge.svg)](https://docs.rs/dioxus-client-storage)
+[![Documentation](https://img.shields.io/badge/docs-eftech93.github.io/dioxus--storage-9D6B4C.svg)](https://eftech93.github.io/dioxus-storage)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
 
 Unified storage API for Dioxus supporting LocalStorage, SessionStorage, and IndexedDB.
@@ -18,20 +19,20 @@ Unified storage API for Dioxus supporting LocalStorage, SessionStorage, and Inde
 
 ```toml
 [dependencies]
-dioxus-storage = "0.0.1"
+dioxus-client-storage = "0.0.1"
 ```
 
 With specific features:
 
 ```toml
 # Only LocalStorage
-dioxus-storage = { version = "0.0.1", default-features = false, features = ["localstorage"] }
+dioxus-client-storage = { version = "0.0.1", default-features = false, features = ["localstorage"] }
 
 # Only IndexedDB
-dioxus-storage = { version = "0.0.1", default-features = false, features = ["indexeddb"] }
+dioxus-client-storage = { version = "0.0.1", default-features = false, features = ["indexeddb"] }
 
 # All storage types
-dioxus-storage = { version = "0.0.1", features = ["indexeddb", "localstorage", "sessionstorage"] }
+dioxus-client-storage = { version = "0.0.1", features = ["indexeddb", "localstorage", "sessionstorage"] }
 ```
 
 ## LocalStorage

@@ -2,7 +2,7 @@
 
 - **Libraries**
   - [dioxus-indexeddb](dioxus-indexeddb.md)
-  - [dioxus-storage](dioxus-storage.md)
+  - [dioxus-client-storage](dioxus-client-storage.md)
   - [dioxus-storage-sync](dioxus-storage-sync.md)
 
 - **Getting Started**

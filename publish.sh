@@ -9,7 +9,7 @@ cargo fmt
 
 echo "🔍 Running clippy (WASM target)..."
 cargo clippy --target wasm32-unknown-unknown --package dioxus-indexeddb
-cargo clippy --target wasm32-unknown-unknown --package dioxus-storage
+cargo clippy --target wasm32-unknown-unknown --package dioxus-client-storage
 cargo clippy --target wasm32-unknown-unknown --package dioxus-storage-sync
 
 echo "🧪 Running tests..."
@@ -19,8 +19,8 @@ echo "📦 Verifying dioxus-indexeddb..."
 cd "$SCRIPT_DIR/dioxus-indexeddb"
 cargo publish --dry-run --allow-dirty --target wasm32-unknown-unknown
 
-echo "📦 Verifying dioxus-storage..."
-cd "$SCRIPT_DIR/dioxus-storage"
+echo "📦 Verifying dioxus-client-storage..."
+cd "$SCRIPT_DIR/dioxus-client-storage"
 cargo publish --dry-run --allow-dirty --target wasm32-unknown-unknown
 
 echo "📦 Verifying dioxus-storage-sync..."
@@ -34,7 +34,7 @@ echo "========================================"
 echo ""
 echo "The following crates will be published:"
 echo "  1. dioxus-indexeddb"
-echo "  2. dioxus-storage (depends on dioxus-indexeddb)"
+echo "  2. dioxus-client-storage (depends on dioxus-indexeddb)"
 echo "  3. dioxus-storage-sync (depends on dioxus-indexeddb)"
 echo ""
 read -p "Continue with publish? (y/N) " -n 1 -r
@@ -51,11 +51,11 @@ cargo publish --allow-dirty
 echo "⏳ Waiting for crates.io to index dioxus-indexeddb..."
 sleep 45
 
-echo "📦 Publishing dioxus-storage..."
-cd "$SCRIPT_DIR/dioxus-storage"
+echo "📦 Publishing dioxus-client-storage..."
+cd "$SCRIPT_DIR/dioxus-client-storage"
 cargo publish --allow-dirty
 
-echo "⏳ Waiting for crates.io to index dioxus-storage..."
+echo "⏳ Waiting for crates.io to index dioxus-client-storage..."
 sleep 45
 
 echo "📦 Publishing dioxus-storage-sync..."
@@ -67,5 +67,5 @@ echo "✅ All 3 crates published successfully!"
 echo ""
 echo "Published:"
 echo "  - dioxus-indexeddb"
-echo "  - dioxus-storage"
+echo "  - dioxus-client-storage"
 echo "  - dioxus-storage-sync"

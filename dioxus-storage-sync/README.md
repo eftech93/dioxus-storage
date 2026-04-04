@@ -2,6 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/dioxus-storage-sync.svg)](https://crates.io/crates/dioxus-storage-sync)
 [![Docs.rs](https://docs.rs/dioxus-storage-sync/badge.svg)](https://docs.rs/dioxus-storage-sync)
+[![Documentation](https://img.shields.io/badge/docs-eftech93.github.io/dioxus--storage-9D6B4C.svg)](https://eftech93.github.io/dioxus-storage)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
 
 Two-way synchronization between local IndexedDB and backend API for Dioxus applications.

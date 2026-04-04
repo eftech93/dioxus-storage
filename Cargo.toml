@@ -1,5 +1,5 @@
 [workspace]
-members = ["dioxus-indexeddb", "dioxus-storage", "dioxus-storage-sync", "examples/demo", "examples/sync-demo"]
+members = ["dioxus-indexeddb", "dioxus-client-storage", "dioxus-storage-sync", "examples/demo", "examples/sync-demo"]
 resolver = "2"
 
 [workspace.package]
@@ -9,7 +9,7 @@ authors = ["Esteban Puello <eftech93@gmail.com>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/eftech93/dioxus-storage"
 homepage = "https://github.com/eftech93/dioxus-storage"
-documentation = "https://docs.rs/dioxus-storage"
+documentation = "https://docs.rs/dioxus-client-storage"
 keywords = ["dioxus", "indexeddb", "storage", "wasm", "web"]
 categories = ["wasm", "web-programming"]
 rust-version = "1.75"

@@ -1,5 +1,5 @@
 [package]
-name = "dioxus-storage"
+name = "dioxus-client-storage"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
