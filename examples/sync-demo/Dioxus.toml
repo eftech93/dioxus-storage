@@ -1,0 +1,9 @@
+[application]
+name = "sync-demo"
+default_platform = "web"
+out_dir = "dist"
+asset_dir = "public"
+
+[web.app]
+title = "Dioxus Storage Sync Demo"
+base_path = "/"

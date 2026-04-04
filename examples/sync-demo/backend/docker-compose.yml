@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: dioxus-storage-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secret
+      MONGO_INITDB_DATABASE: products_db
+    volumes:
+      - mongo_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - backend
+
+  api:
+    build: ./api
+    container_name: dioxus-storage-api
+    ports:
+      - "3001:3001"
+    environment:
+      MONGODB_URI: mongodb://admin:secret@mongodb:27017/products_db?authSource=admin
+      PORT: 3001
+      RUST_LOG: info
+    depends_on:
+      mongodb:
+        condition: service_started
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mongo_data:
+
+networks:
+  backend:
+    driver: bridge

@@ -1,0 +1,47 @@
+[workspace]
+members = ["dioxus-indexeddb", "dioxus-storage", "dioxus-storage-sync", "examples/demo", "examples/sync-demo"]
+resolver = "2"
+
+[workspace.package]
+version = "0.0.1"
+edition = "2021"
+authors = ["Esteban Puello <eftech93@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/eftech93/dioxus-storage"
+homepage = "https://github.com/eftech93/dioxus-storage"
+documentation = "https://docs.rs/dioxus-storage"
+keywords = ["dioxus", "indexeddb", "storage", "wasm", "web"]
+categories = ["wasm", "web-programming"]
+rust-version = "1.75"
+
+[workspace.dependencies]
+# Core
+dioxus = { version = "0.6", default-features = false, features = ["web", "hooks"] }
+dioxus-signals = "0.6"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Storage", "Window"] }
+
+# IndexedDB
+idb = "0.6"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde-wasm-bindgen = "0.6"
+
+# Async
+async-trait = "0.1"
+futures = "0.3"
+
+# Errors
+thiserror = "2.0"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4", "serde", "js"] }
+log = "0.4"
+
+# Dev dependencies
+wasm-bindgen-test = "0.3"
+tokio = { version = "1.0", features = ["rt", "macros"] }

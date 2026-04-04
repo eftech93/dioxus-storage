@@ -1,0 +1,48 @@
+[package]
+name = "dioxus-storage"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+description = "Unified storage API for Dioxus (IndexedDB, LocalStorage, SessionStorage)"
+
+[dependencies]
+# Core
+dioxus = { workspace = true }
+dioxus-signals = { workspace = true }
+
+# WASM
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+web-sys = { workspace = true }
+
+# Re-export IndexedDB
+dioxus-indexeddb = { path = "../dioxus-indexeddb", optional = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Async
+async-trait = { workspace = true }
+
+# Errors
+thiserror = { workspace = true }
+
+# Utilities
+log = { workspace = true }
+
+[features]
+default = ["indexeddb", "localstorage"]
+indexeddb = ["dep:dioxus-indexeddb"]
+localstorage = []
+sessionstorage = []
+
+[dev-dependencies]
+wasm-bindgen-test = { workspace = true }

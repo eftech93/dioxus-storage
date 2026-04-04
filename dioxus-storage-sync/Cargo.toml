@@ -1,0 +1,51 @@
+[package]
+name = "dioxus-storage-sync"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+description = "Backend synchronization for dioxus-storage with hot and background sync modes"
+
+[dependencies]
+# Core
+dioxus = { workspace = true }
+dioxus-signals = { workspace = true }
+dioxus-indexeddb = { path = "../dioxus-indexeddb" }
+
+# WASM
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+js-sys = { workspace = true }
+web-sys = { workspace = true }
+
+# Async
+async-trait = { workspace = true }
+futures = { workspace = true }
+
+# HTTP
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Time
+gloo-timers = { version = "0.3", features = ["futures"] }
+chrono = { version = "0.4", features = ["serde", "wasmbind"] }
+
+# Errors
+thiserror = { workspace = true }
+
+# Utilities
+log = { workspace = true }
+uuid = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+wasm-bindgen-test = { workspace = true }
