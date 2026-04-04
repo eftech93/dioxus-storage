@@ -17,15 +17,15 @@ cargo test --workspace --exclude dioxus-client-storage-demo --exclude sync-demo
 
 echo "📦 Verifying dioxus-indexeddb..."
 cd "$SCRIPT_DIR/dioxus-indexeddb"
-cargo publish --dry-run --allow-dirty
+cargo publish --dry-run
 
 echo "📦 Verifying dioxus-client-storage..."
 cd "$SCRIPT_DIR/dioxus-client-storage"
-cargo publish --dry-run --allow-dirty
+cargo publish --dry-run
 
 echo "📦 Verifying dioxus-storage-sync..."
 cd "$SCRIPT_DIR/dioxus-storage-sync"
-cargo publish --dry-run --allow-dirty
+cargo publish --dry-run
 
 echo ""
 echo "========================================"
@@ -46,21 +46,21 @@ fi
 
 echo "📦 Publishing dioxus-indexeddb..."
 cd "$SCRIPT_DIR/dioxus-indexeddb"
-cargo publish --allow-dirty
+cargo publish
 
 echo "⏳ Waiting for crates.io to index dioxus-indexeddb..."
 sleep 45
 
 echo "📦 Publishing dioxus-client-storage..."
 cd "$SCRIPT_DIR/dioxus-client-storage"
-cargo publish --allow-dirty
+cargo publish
 
 echo "⏳ Waiting for crates.io to index dioxus-client-storage..."
 sleep 45
 
 echo "📦 Publishing dioxus-storage-sync..."
 cd "$SCRIPT_DIR/dioxus-storage-sync"
-cargo publish --allow-dirty
+cargo publish
 
 echo ""
 echo "✅ All 3 crates published successfully!"
