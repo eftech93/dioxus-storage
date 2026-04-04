@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Dioxus Storage</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Type-safe storage solutions for Dioxus web applications">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="https://eftech93.github.io/eftech93/slyte.css" />
+  <link rel="icon" type="image/png" href="https://eftech93.github.io/eftech93/_media/logo.png" />
+</head>
+
+<body>
+  <div id="app"></div>
+  
+  <!-- Mermaid.js -->
+  <script src="//cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  
+  <script>
+    // Initialize mermaid
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose',
+      logLevel: 'error',
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      },
+      sequence: {
+        useMaxWidth: true
+      },
+      gantt: {
+        useMaxWidth: true
+      },
+      pie: {
+        useMaxWidth: true
+      },
+      timeline: {
+        useMaxWidth: true
+      }
+    });
+
+    let num = 0;
+    
+    window.$docsify = {
+      name: 'Dioxus Storage',
+      logo: 'https://eftech93.github.io/eftech93/_media/logo3.png',
+      themeColor: '#DEC647',
+      repo: 'https://github.com/eftech93/dioxus-storage',
+      coverpage: 'coverpage.md',
+      loadSidebar: true,
+      subMaxLevel: 2,
+      auto2top: true,
+      markdown: {
+        renderer: {
+          code: function (code, lang) {
+            if (lang === "mermaid") {
+              return '<div class="mermaid" id="mermaid-' + num++ + '">' + code + '</div>';
+            }
+            return this.origin.code.apply(this, arguments);
+          }
+        }
+      },
+      plugins: [
+        function(hook, vm) {
+          hook.doneEach(function() {
+            // Re-render mermaid diagrams after each page load
+            mermaid.run({
+              querySelector: '.mermaid'
+            }).catch(function(err) {
+              console.error('Mermaid rendering error:', err);
+            });
+          });
+        }
+      ]
+    }
+  </script>
+  
+  <!-- Docsify v4 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+</body>
+
+</html>
