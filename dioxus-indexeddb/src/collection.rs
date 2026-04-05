@@ -278,9 +278,9 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
             .object_store(&self.name)
             .map_err(|_| IndexedDbError::StoreNotFound(self.name.clone()))?;
 
-        let index = store
-            .index(index_name)
-            .map_err(|e| IndexedDbError::Database(format!("Index '{}' not found: {:?}", index_name, e)))?;
+        let index = store.index(index_name).map_err(|e| {
+            IndexedDbError::Database(format!("Index '{}' not found: {:?}", index_name, e))
+        })?;
 
         let js_value = wasm_bindgen::JsValue::from_str(value);
         let query = IdbQuery::Key(js_value);
@@ -353,7 +353,9 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
             if query.filters.len() == 1 {
                 if let Some(crate::query::Filter::Eq(field, value)) = query.filters.first() {
                     // Get the index key path to verify it matches
-                    let items = self.get_by_index(index_name, value.as_str().unwrap_or("")).await?;
+                    let items = self
+                        .get_by_index(index_name, value.as_str().unwrap_or(""))
+                        .await?;
                     let filtered = crate::query::execute_query(items, query);
                     return Ok(filtered);
                 }

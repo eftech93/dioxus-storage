@@ -36,7 +36,10 @@ impl Transaction {
     }
 
     /// Get a collection within this transaction
-    pub fn collection<T: Serialize + DeserializeOwned + Clone>(&self, name: &str) -> Result<Collection<T>> {
+    pub fn collection<T: Serialize + DeserializeOwned + Clone>(
+        &self,
+        name: &str,
+    ) -> Result<Collection<T>> {
         if !self.store_names.contains(&name.to_string()) {
             return Err(IndexedDbError::InvalidQuery(format!(
                 "Store '{}' not in transaction scope",

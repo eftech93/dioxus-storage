@@ -3,7 +3,9 @@
 use crate::collection::Collection;
 use crate::error::{IndexedDbError, Result};
 use crate::migration::{Migration, MigrationManager};
-use idb::{Database as IdbDatabase, DatabaseEvent, Factory, IndexParams, KeyPath, ObjectStoreParams};
+use idb::{
+    Database as IdbDatabase, DatabaseEvent, Factory, IndexParams, KeyPath, ObjectStoreParams,
+};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -81,7 +83,7 @@ impl DatabaseConfig {
         let store_name = store_name.into();
         let index_name = index_name.into();
         let key_path = key_path.into();
-        
+
         if let Some(store) = self.stores.iter_mut().find(|s| s.name == store_name) {
             store.indexes.push(IndexConfig {
                 name: index_name,
