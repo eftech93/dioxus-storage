@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2] - 2025-04-05
+
 ### Added
 
 #### dioxus-indexeddb
@@ -52,4 +54,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sync demo with MongoDB backend
 - Complete documentation with docsify
 
+[0.0.2]: https://github.com/eftech93/dioxus-client-storage/releases/tag/v0.0.2
 [0.0.1]: https://github.com/eftech93/dioxus-client-storage/releases/tag/v0.0.1
