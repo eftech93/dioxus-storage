@@ -35,6 +35,38 @@ let all_users: Vec<User> = users.get_all().await?;
 
 **Returns:** `Result<Vec<T>>`
 
+### `get_by_index`
+
+Query items using an index.
+
+```rust
+// Query by email index
+let users = collection.get_by_index("email_idx", "user@example.com").await?;
+```
+
+**Parameters:**
+- `index_name: &str` - Name of the index
+- `value: &str` - Value to search for
+
+**Returns:** `Result<Vec<T>>`
+
+### `get_one_by_index`
+
+Get a single item by unique index value.
+
+```rust
+// Get user by unique email
+let user = collection.get_one_by_index("email_idx", "user@example.com").await?;
+```
+
+**Parameters:**
+- `index_name: &str` - Name of the unique index
+- `value: &str` - Value to search for
+
+**Returns:** `Result<Option<T>>`
+
+**Note:** Returns error if multiple items match (index should be unique)
+
 ### `insert`
 
 Insert a new item. Fails if key already exists.
@@ -131,6 +163,24 @@ let exists = users.exists("user-123").await?;
 - `key: &str` - Item key
 
 **Returns:** `Result<bool>`
+
+### `find`
+
+Execute a query with index optimization.
+
+```rust
+let results = collection.find(
+    Query::new()
+        .use_index("category_idx")
+        .filter(Filter::eq("category", "electronics"))
+        .limit(10)
+).await?;
+```
+
+**Parameters:**
+- `query: &Query` - Query configuration (supports `.use_index()`)
+
+**Returns:** `Result<QueryResult<T>>`
 
 ## Example Usage
 

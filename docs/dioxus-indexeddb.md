@@ -114,11 +114,14 @@ Executes a query and returns reactive results.
 |--------|-------------|
 | `get(key: &str) -> Result<Option<T>>` | Get a single item by key |
 | `get_all() -> Result<Vec<T>>` | Get all items in the collection |
+| `get_by_index(index: &str, value: &str) -> Result<Vec<T>>` | Query using an index |
+| `get_one_by_index(index: &str, value: &str) -> Result<Option<T>>` | Get single item by unique index |
 | `insert(key: &str, item: &T) -> Result<()>` | Insert a new item |
 | `put(key: &str, item: &T) -> Result<()>` | Insert or update an item |
 | `delete(key: &str) -> Result<()>` | Delete an item by key |
 | `clear() -> Result<()>` | Clear all items |
 | `query(query: Query) -> Result<Vec<T>>` | Execute a filtered query |
+| `find(query: &Query) -> Result<QueryResult<T>>` | Execute query with index optimization |
 
 ### Query Builder
 
@@ -165,6 +168,65 @@ let db = Database::open_with_migrations(
     DatabaseConfig::new("my_app", 3),
     migrations
 ).await.expect("Failed to open database");
+```
+
+## Indexes
+
+Indexes enable fast queries on specific fields.
+
+### Creating Indexes
+
+```rust
+use dioxus_indexeddb::prelude::*;
+
+let config = DatabaseConfig::new("my_app", 1)
+    .with_store_and_indexes(
+        "users", 
+        "id",
+        vec![
+            IndexConfig::new("email_idx", "email", true),   // unique index
+            IndexConfig::new("age_idx", "age", false),      // non-unique index
+        ]
+    );
+
+let db = Database::open(config).await?;
+```
+
+### Querying by Index
+
+```rust
+let collection = db.collection::<User>("users");
+
+// Get user by unique email index
+let user = collection.get_one_by_index("email_idx", "user@example.com").await?;
+
+// Get all users with specific age
+let users = collection.get_by_index("age_idx", "25").await?;
+
+// Use index with Query builder
+let results = collection.find(
+    Query::new()
+        .use_index("age_idx")
+        .filter(Filter::gte("age", 18))
+).await?;
+```
+
+### Adding Indexes to Existing Stores
+
+Use migrations to add indexes to existing stores:
+
+```rust
+let migrations = MigrationManager::new()
+    .add_migration(
+        Migration::new(2)
+            .create_store("users", "id")
+            .create_index("users", "email_idx", "email", true)
+    );
+
+let db = Database::open_with_migrations(
+    DatabaseConfig::new("my_app", 2),
+    migrations
+).await?;
 ```
 
 ## Transactions

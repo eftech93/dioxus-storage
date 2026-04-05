@@ -128,12 +128,40 @@ fn ProductList() -> Element {
 }
 ```
 
+## Using Indexes
+
+For optimal performance, use indexes when querying:
+
+```rust
+// Create index when defining the database
+let config = DatabaseConfig::new("my_app", 1)
+    .with_store_and_indexes(
+        "products",
+        "id",
+        vec![
+            IndexConfig::new("category_idx", "category", false),
+            IndexConfig::new("price_idx", "price", false),
+        ]
+    );
+
+// Query using index for fast lookup
+let electronics = collection.get_by_index("category_idx", "electronics").await?;
+
+// Or use Query with index hint
+let results = collection.find(
+    Query::new()
+        .use_index("category_idx")
+        .filter(Filter::eq("category", "electronics"))
+        .filter(Filter::gt("price", 100.0))
+).await?;
+```
+
 ## Query Performance Tips
 
-1. **Use specific filters first** - More restrictive filters reduce data scanned
-2. **Index commonly filtered fields** - Create indexes for query optimization
+1. **Use indexes** - Create indexes for fields you filter on frequently
+2. **Use specific filters first** - More restrictive filters reduce data scanned
 3. **Limit results** - Always use `.limit()` for large datasets
-4. **Avoid full scans** - Structure queries to use indexes
+4. **Use `.use_index()`** - Hint the query to use specific indexes
 
 ## Programmatic Query Building
 

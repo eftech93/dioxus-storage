@@ -41,6 +41,7 @@ fn UserList() -> Element {
 - Type-safe collections with serde serialization
 - Dioxus hooks: `use_db`, `use_collection`, `use_query`
 - Query builder with filtering and sorting
+- **Index support** for fast queries
 - Multi-store transactions
 - Async/await API
 
@@ -136,6 +137,31 @@ Add to your `Cargo.toml`:
 ```toml
 [dependencies]
 dioxus-client-storage = { git = "https://github.com/eftech93/dioxus-client-storage" }
+```
+
+### Using Indexes
+
+```rust
+use dioxus_indexeddb::prelude::*;
+
+// Create database with indexes
+let db = Database::open(
+    DatabaseConfig::new("my_app", 1)
+        .with_store_and_indexes(
+            "users", 
+            "id",
+            vec![
+                IndexConfig::new("email_idx", "email", true),   // unique
+                IndexConfig::new("age_idx", "age", false),      // non-unique
+            ]
+        )
+).await?;
+
+let collection = db.collection::<User>("users");
+
+// Query using index
+let user = collection.get_one_by_index("email_idx", "user@example.com").await?;
+let adults = collection.get_by_index("age_idx", "25").await?;
 ```
 
 Or use individual crates:
