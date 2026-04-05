@@ -114,7 +114,26 @@ let config = DatabaseConfig::new("my_app", 1)  // name, version
 |--------|-------------|
 | `new(name, version)` | Create new config |
 | `with_store(name, key_path)` | Add object store |
+| `with_store_and_indexes(name, key_path, indexes)` | Add store with indexes |
+| `with_index(store, name, key_path, unique)` | Add index to existing store |
 | `with_auto_increment_store(name, key_path)` | Add auto-increment store |
+
+## IndexConfig
+
+Configuration for an IndexedDB index.
+
+```rust
+let index = IndexConfig::new("email_idx", "email", true);  // unique index
+let index = IndexConfig::new("age_idx", "age", false);     // non-unique
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | `impl Into<String>` | Index name |
+| `key_path` | `impl Into<String>` | Field to index |
+| `unique` | `bool` | Enforce unique values |
 
 ## Transaction
 

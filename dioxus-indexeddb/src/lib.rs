@@ -41,7 +41,7 @@ mod transaction;
 pub mod schema;
 
 pub use collection::Collection;
-pub use database::{Database, DatabaseConfig};
+pub use database::{Database, DatabaseConfig, IndexConfig, StoreConfig};
 pub use error::{IndexedDbError, Result};
 pub use hooks::{use_collection, use_db, use_query};
 pub use migration::{DatabaseBuilder, Migration, MigrationManager, MigrationOp};
@@ -50,6 +50,9 @@ pub use query::{
     QueryResult,
 };
 pub use transaction::Transaction;
+
+// Re-export idb Query type for index operations
+pub use idb::Query as IdbQuery;
 
 pub use schema::{Schema, SchemaDatabase, Store, StoreDefinition};
 
@@ -61,6 +64,7 @@ pub mod prelude {
     pub use super::{use_collection, use_db, use_query};
     pub use super::{Collection, Database, DatabaseConfig, IndexedDbError, Result};
     pub use super::{DatabaseBuilder, Migration, MigrationManager, MigrationOp};
+    pub use super::{IndexConfig, StoreConfig};
 }
 
 use wasm_bindgen::JsValue;

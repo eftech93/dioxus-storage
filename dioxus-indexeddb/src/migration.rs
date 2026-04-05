@@ -4,7 +4,7 @@
 //! Each migration specifies a target version and operations to perform.
 
 use crate::error::{IndexedDbError, Result};
-use idb::{Database as IdbDatabase, IndexParams, KeyPath, ObjectStoreParams};
+use idb::{Database as IdbDatabase, KeyPath, ObjectStoreParams};
 
 /// A database migration
 #[derive(Debug, Clone)]

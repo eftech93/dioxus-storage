@@ -43,7 +43,7 @@ pub fn use_db(config: DatabaseConfig) -> Signal<Option<Database>> {
 /// ```rust,ignore
 /// let users = use_collection::<User>(db, "users");
 /// ```
-pub fn use_collection<T: Serialize + DeserializeOwned + 'static>(
+pub fn use_collection<T: Serialize + DeserializeOwned + Clone + 'static>(
     db: Signal<Option<Database>>,
     name: &str,
 ) -> Signal<Option<Collection<T>>> {
