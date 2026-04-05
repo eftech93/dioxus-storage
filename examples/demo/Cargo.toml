@@ -6,11 +6,10 @@ authors = ["Esteban Puello <eftech93@gmail.com>"]
 
 [[bin]]
 name = "dioxus-client-storage-demo"
-crate-type = ["cdylib", "bin"]
 
 [dependencies]
 dioxus = { version = "0.6", features = ["web", "hooks"] }
-dioxus-client-storage = { path = "../../dioxus-client-storage" }
+dioxus-client-storage = { path = "../../dioxus-client-storage", features = ["indexeddb"] }
 dioxus-indexeddb = { path = "../../dioxus-indexeddb" }
 
 serde = { version = "1.0", features = ["derive"] }

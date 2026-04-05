@@ -3,7 +3,7 @@
 //! This example demonstrates LocalStorage, SessionStorage, and IndexedDB.
 
 use dioxus::prelude::*;
-use dioxus_client_storage::{use_local_storage, use_session_storage};
+use dioxus_client_storage::prelude::*;
 use dioxus_indexeddb::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -136,15 +136,17 @@ struct Task {
     title: String,
     description: String,
     completed: bool,
+    priority: String, // "low", "medium", "high"
 }
 
 impl Task {
-    fn new(title: impl Into<String>, description: impl Into<String>) -> Self {
+    fn new(title: impl Into<String>, description: impl Into<String>, priority: impl Into<String>) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             title: title.into(),
             description: description.into(),
             completed: false,
+            priority: priority.into(),
         }
     }
 }
@@ -156,14 +158,20 @@ fn IndexedDbDemo() -> Element {
     let mut loading = use_signal(|| false);
     let mut error_msg = use_signal(|| Option::<String>::None);
 
-    // Initialize database
+    // Initialize database with index on priority
     use_effect(move || {
         spawn(async move {
             loading.set(true);
             error_msg.set(None);
 
-            let config = DatabaseConfig::new("demo_db", 1)
-                .with_store("tasks", "id");
+            let config = DatabaseConfig::new("demo_db_v2", 1)
+                .with_store_and_indexes(
+                    "tasks", 
+                    "id",
+                    vec![
+                        IndexConfig::new("priority_idx", "priority", false),
+                    ]
+                );
 
             match Database::open(config).await {
                 Ok(db) => {
@@ -185,6 +193,7 @@ fn IndexedDbDemo() -> Element {
 
     let mut title_input = use_signal(|| "".to_string());
     let mut desc_input = use_signal(|| "".to_string());
+    let mut priority_input = use_signal(|| "medium".to_string());
 
     let add_task = move |_| {
         let title = title_input.read().clone();
@@ -192,7 +201,7 @@ fn IndexedDbDemo() -> Element {
             return;
         }
 
-        let new_task = Task::new(title, desc_input.read().clone());
+        let new_task = Task::new(title, desc_input.read().clone(), priority_input.read().clone());
         let db = db_signal.read().clone();
         let mut tasks = tasks.clone();
 
@@ -205,6 +214,7 @@ fn IndexedDbDemo() -> Element {
                     tasks.set(current);
                     title_input.set(String::new());
                     desc_input.set(String::new());
+                    priority_input.set("medium".to_string());
                 }
             }
         });
@@ -248,7 +258,38 @@ fn IndexedDbDemo() -> Element {
 
     let current_title = title_input.read().clone();
     let current_desc = desc_input.read().clone();
+    let current_priority = priority_input.read().clone();
     let task_count = tasks.read().len();
+    
+    // Filter state
+    let mut filter_priority = use_signal(|| Option::<String>::None);
+    let current_filter = filter_priority.read().clone();
+    
+    // Load tasks when filter changes (demonstrates index usage)
+    use_effect(move || {
+        let db = db_signal.read().clone();
+        let filter = filter_priority.read().clone();
+        let mut tasks = tasks.clone();
+        
+        spawn(async move {
+            if let Some(db) = db {
+                let collection: Collection<Task> = db.collection("tasks");
+                let result = match filter {
+                    Some(priority) => {
+                        // Use index to get tasks by priority
+                        log::info!("Using index 'priority_idx' to filter by: {}", priority);
+                        collection.get_by_index("priority_idx", &priority).await
+                    }
+                    None => collection.get_all().await,
+                };
+                
+                match result {
+                    Ok(data) => tasks.set(data),
+                    Err(e) => log::error!("Filter error: {}", e),
+                }
+            }
+        });
+    });
 
     rsx! {
         div { class: "card indexeddb",
@@ -274,10 +315,43 @@ fn IndexedDbDemo() -> Element {
                     oninput: move |e| desc_input.set(e.value()),
                     rows: 2,
                 }
+                select {
+                    value: "{current_priority}",
+                    onchange: move |e| priority_input.set(e.value()),
+                    option { value: "low", "🟢 Low Priority" }
+                    option { value: "medium", "🟡 Medium Priority" }
+                    option { value: "high", "🔴 High Priority" }
+                }
                 button {
                     onclick: add_task,
                     disabled: current_title.is_empty(),
                     "➕ Add Task"
+                }
+            }
+
+            div { class: "filter-section",
+                h3 { "Filter by Priority (using Index)" }
+                div { class: "filter-buttons",
+                    button {
+                        onclick: move |_| filter_priority.set(None),
+                        class: if current_filter.is_none() { "active" } else { "" },
+                        "All"
+                    }
+                    button {
+                        onclick: move |_| filter_priority.set(Some("low".to_string())),
+                        class: if current_filter == Some("low".to_string()) { "active" } else { "" },
+                        "🟢 Low"
+                    }
+                    button {
+                        onclick: move |_| filter_priority.set(Some("medium".to_string())),
+                        class: if current_filter == Some("medium".to_string()) { "active" } else { "" },
+                        "🟡 Medium"
+                    }
+                    button {
+                        onclick: move |_| filter_priority.set(Some("high".to_string())),
+                        class: if current_filter == Some("high".to_string()) { "active" } else { "" },
+                        "🔴 High"
+                    }
                 }
             }
 
@@ -304,11 +378,17 @@ fn IndexedDbDemo() -> Element {
 fn TaskItem(task: Task, on_toggle: EventHandler<Task>, on_delete: EventHandler<String>) -> Element {
     let task_for_toggle = task.clone();
     let task_id = task.id.clone();
+    let priority_icon = match task.priority.as_str() {
+        "high" => "🔴",
+        "medium" => "🟡",
+        _ => "🟢",
+    };
 
     rsx! {
         div {
             class: "task",
             class: if task.completed { "completed" } else { "" },
+            class: "priority-{task.priority}",
 
             div { class: "task-content",
                 input {
@@ -317,7 +397,7 @@ fn TaskItem(task: Task, on_toggle: EventHandler<Task>, on_delete: EventHandler<S
                     onchange: move |_| on_toggle.call(task_for_toggle.clone()),
                 }
                 div { class: "task-text",
-                    span { class: "title", "{task.title}" }
+                    span { class: "title", "{priority_icon} {task.title}" }
                     if !task.description.is_empty() {
                         span { class: "description", "{task.description}" }
                     }
@@ -538,5 +618,54 @@ button:disabled {
 
 .empty {
     color: #999;
+}
+
+.filter-section {
+    background: #f0f9ff;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.filter-section h3 {
+    margin: 0 0 12px 0;
+    font-size: 0.95rem;
+    color: #0369a1;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-buttons button {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+}
+
+.filter-buttons button:hover {
+    background: #f3f4f6;
+}
+
+.filter-buttons button.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.task.priority-high {
+    border-left-color: #ef4444;
+}
+
+.task.priority-medium {
+    border-left-color: #f59e0b;
+}
+
+.task.priority-low {
+    border-left-color: #22c55e;
 }
 "#;
