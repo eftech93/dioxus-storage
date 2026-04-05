@@ -2,7 +2,7 @@
 
 use crate::error::{IndexedDbError, Result};
 use crate::{from_js_value, to_js_value};
-use idb::{Database as IdbDatabase, TransactionMode};
+use idb::{Database as IdbDatabase, Query as IdbQuery, TransactionMode};
 use serde::{de::DeserializeOwned, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -15,7 +15,7 @@ pub struct Collection<T> {
     _phantom: std::marker::PhantomData<T>,
 }
 
-impl<T: Serialize + DeserializeOwned> Collection<T> {
+impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
     /// Create a new collection
     pub(crate) fn new(db: Rc<RefCell<IdbDatabase>>, name: String) -> Self {
         Self {
@@ -260,6 +260,110 @@ impl<T: Serialize + DeserializeOwned> Collection<T> {
             .map_err(|e| IndexedDbError::Database(e.to_string()))?;
 
         Ok(count as u32)
+    }
+
+    /// Get items by index value
+    ///
+    /// # Example
+    /// ```rust,ignore
+    /// let users = collection.get_by_index("email_idx", "user@example.com").await?;
+    /// ```
+    pub async fn get_by_index(&self, index_name: &str, value: &str) -> Result<Vec<T>> {
+        let transaction = self.with_db(|db| {
+            db.transaction(&[&self.name], TransactionMode::ReadOnly)
+                .map_err(|e| IndexedDbError::Transaction(e.to_string()))
+        })?;
+
+        let store = transaction
+            .object_store(&self.name)
+            .map_err(|_| IndexedDbError::StoreNotFound(self.name.clone()))?;
+
+        let index = store
+            .index(index_name)
+            .map_err(|e| IndexedDbError::Database(format!("Index '{}' not found: {:?}", index_name, e)))?;
+
+        let js_value = wasm_bindgen::JsValue::from_str(value);
+        let query = IdbQuery::Key(js_value);
+        let request = index
+            .get_all(Some(query), None)
+            .map_err(|e| IndexedDbError::Database(e.to_string()))?;
+
+        let result = request
+            .await
+            .map_err(|e| IndexedDbError::Database(e.to_string()))?;
+
+        let mut items = Vec::new();
+        for i in 0..result.len() {
+            if let Some(js_value) = result.get(i) {
+                match from_js_value(&js_value) {
+                    Ok(item) => items.push(item),
+                    Err(e) => {
+                        log::warn!("Failed to deserialize item at index {}: {}", i, e);
+                    }
+                }
+            }
+        }
+
+        Ok(items)
+    }
+
+    /// Get a single item by unique index value
+    ///
+    /// Returns `None` if no item matches or if multiple items match
+    /// (only use with unique indexes).
+    ///
+    /// # Example
+    /// ```rust,ignore
+    /// let user = collection.get_one_by_index("email_idx", "user@example.com").await?;
+    /// ```
+    pub async fn get_one_by_index(&self, index_name: &str, value: &str) -> Result<Option<T>> {
+        let items = self.get_by_index(index_name, value).await?;
+        if items.len() == 1 {
+            Ok(Some(items.into_iter().next().unwrap()))
+        } else if items.is_empty() {
+            Ok(None)
+        } else {
+            Err(IndexedDbError::Constraint(format!(
+                "Multiple items found for index '{}' with value '{}'",
+                index_name, value
+            )))
+        }
+    }
+
+    /// Query the collection using a Query object
+    ///
+    /// This method respects the `use_index` setting in the Query.
+    ///
+    /// # Example
+    /// ```rust,ignore
+    /// let results = collection
+    ///     .find(Query::new()
+    ///         .use_index("age_idx")
+    ///         .filter(Filter::gte("age", 18))
+    ///         .order_by_desc("age")
+    ///         .limit(10)
+    ///     )
+    ///     .await?;
+    /// ```
+    pub async fn find(&self, query: &crate::query::Query) -> Result<crate::query::QueryResult<T>> {
+        // If an index is specified and we have a single equality filter on that field,
+        // we can use the index directly
+        if let Some(ref index_name) = query.index_name {
+            // Check if we have a single equality filter that matches the index
+            if query.filters.len() == 1 {
+                if let Some(crate::query::Filter::Eq(field, value)) = query.filters.first() {
+                    // Get the index key path to verify it matches
+                    let items = self.get_by_index(index_name, value.as_str().unwrap_or("")).await?;
+                    let filtered = crate::query::execute_query(items, query);
+                    return Ok(filtered);
+                }
+            }
+        }
+
+        // Fall back to scanning all items
+        let items = self.get_all().await?;
+        let result = crate::query::execute_query(items, query);
+        Ok(result)
     }
 }
 

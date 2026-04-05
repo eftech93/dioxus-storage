@@ -3,7 +3,7 @@
 use crate::collection::Collection;
 use crate::error::{IndexedDbError, Result};
 use crate::migration::{Migration, MigrationManager};
-use idb::{Database as IdbDatabase, DatabaseEvent, Factory, KeyPath, ObjectStoreParams};
+use idb::{Database as IdbDatabase, DatabaseEvent, Factory, IndexParams, KeyPath, ObjectStoreParams};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -39,6 +39,22 @@ impl DatabaseConfig {
         self
     }
 
+    /// Add an object store with indexes
+    pub fn with_store_and_indexes(
+        mut self,
+        name: impl Into<String>,
+        key_path: impl Into<String>,
+        indexes: Vec<IndexConfig>,
+    ) -> Self {
+        self.stores.push(StoreConfig {
+            name: name.into(),
+            key_path: key_path.into(),
+            auto_increment: false,
+            indexes,
+        });
+        self
+    }
+
     /// Add an object store with auto-increment
     pub fn with_auto_increment_store(
         mut self,
@@ -51,6 +67,30 @@ impl DatabaseConfig {
             auto_increment: true,
             indexes: Vec::new(),
         });
+        self
+    }
+
+    /// Add an index to an existing store configuration
+    pub fn with_index(
+        mut self,
+        store_name: impl Into<String>,
+        index_name: impl Into<String>,
+        key_path: impl Into<String>,
+        unique: bool,
+    ) -> Self {
+        let store_name = store_name.into();
+        let index_name = index_name.into();
+        let key_path = key_path.into();
+        
+        if let Some(store) = self.stores.iter_mut().find(|s| s.name == store_name) {
+            store.indexes.push(IndexConfig {
+                name: index_name,
+                key_path,
+                unique,
+            });
+        } else {
+            log::warn!("Cannot add index to non-existent store '{}'", store_name);
+        }
         self
     }
 }
@@ -70,6 +110,17 @@ pub struct IndexConfig {
     pub name: String,
     pub key_path: String,
     pub unique: bool,
+}
+
+impl IndexConfig {
+    /// Create a new index configuration
+    pub fn new(name: impl Into<String>, key_path: impl Into<String>, unique: bool) -> Self {
+        Self {
+            name: name.into(),
+            key_path: key_path.into(),
+            unique,
+        }
+    }
 }
 
 /// A connection to an IndexedDB database
@@ -125,6 +176,8 @@ impl Database {
             for store_config in &stores {
                 // Check if store already exists
                 if store_names.contains(&store_config.name) {
+                    // Note: Adding indexes to existing stores requires a transaction
+                    // This should be done via migrations for existing stores
                     continue;
                 }
 
@@ -132,12 +185,39 @@ impl Database {
                 params.key_path(Some(KeyPath::new_single(&store_config.key_path)));
                 params.auto_increment(store_config.auto_increment);
 
-                if let Err(e) = database.create_object_store(&store_config.name, params) {
-                    log::error!(
-                        "Failed to create object store '{}': {:?}",
-                        store_config.name,
-                        e
-                    );
+                match database.create_object_store(&store_config.name, params) {
+                    Ok(store) => {
+                        // Create indexes for the new store
+                        for index_config in &store_config.indexes {
+                            let mut index_params = IndexParams::new();
+                            index_params.unique(index_config.unique);
+                            if let Err(e) = store.create_index(
+                                &index_config.name,
+                                KeyPath::new_single(&index_config.key_path),
+                                Some(index_params),
+                            ) {
+                                log::error!(
+                                    "Failed to create index '{}' on store '{}': {:?}",
+                                    index_config.name,
+                                    store_config.name,
+                                    e
+                                );
+                            } else {
+                                log::info!(
+                                    "Created index '{}' on store '{}'",
+                                    index_config.name,
+                                    store_config.name
+                                );
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log::error!(
+                            "Failed to create object store '{}': {:?}",
+                            store_config.name,
+                            e
+                        );
+                    }
                 }
             }
         });
@@ -152,7 +232,7 @@ impl Database {
     }
 
     /// Get a collection for the given store name
-    pub fn collection<T: serde::Serialize + serde::de::DeserializeOwned>(
+    pub fn collection<T: serde::Serialize + serde::de::DeserializeOwned + Clone>(
         &self,
         name: &str,
     ) -> Collection<T> {

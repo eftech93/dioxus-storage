@@ -95,7 +95,7 @@ pub struct IndexDefinition {
 /// A trait for types that can be stored in IndexedDB
 ///
 /// This provides type-safe access to stores
-pub trait Store: Serialize + DeserializeOwned + 'static {
+pub trait Store: Serialize + DeserializeOwned + Clone + 'static {
     /// Get the store name
     fn store_name() -> &'static str;
 
@@ -155,7 +155,7 @@ impl SchemaDatabase {
     }
 
     /// Get a typed collection
-    pub fn collection<T: Store>(&self) -> Collection<T> {
+    pub fn collection<T: Store + Clone>(&self) -> Collection<T> {
         self.db.collection(T::store_name())
     }
 

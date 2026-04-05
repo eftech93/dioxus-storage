@@ -37,6 +37,8 @@ pub struct Query {
     pub group_by: Option<String>,
     /// Aggregations
     pub aggregations: Vec<Aggregation>,
+    /// Index to use for this query
+    pub index_name: Option<String>,
 }
 
 /// Filter combination mode
@@ -93,6 +95,7 @@ impl Default for Query {
             skip: None,
             group_by: None,
             aggregations: Vec::new(),
+            index_name: None,
         }
     }
 }
@@ -101,6 +104,26 @@ impl Query {
     /// Create a new query
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Use a specific index for this query
+    ///
+    /// This can significantly improve query performance when filtering
+    /// on indexed fields.
+    ///
+    /// # Example
+    /// ```rust,ignore
+    /// let users = collection
+    ///     .find(
+    ///         Query::new()
+    ///             .use_index("email_idx")
+    ///             .filter(Filter::eq("email", "user@example.com"))
+    ///     )
+    ///     .await?;
+    /// ```
+    pub fn use_index(mut self, index_name: impl Into<String>) -> Self {
+        self.index_name = Some(index_name.into());
+        self
     }
 
     /// Add a filter
