@@ -1,5 +1,6 @@
 # Dioxus Storage
 
+![Tests](https://github.com/eftech93/dioxus-storage/actions/workflows/ci.yml/badge.svg)
 [![Documentation](https://img.shields.io/badge/docs-eftech93.github.io/dioxus--storage-9D6B4C.svg)](https://eftech93.github.io/dioxus-storage)
 
 Type-safe storage solutions for Dioxus web applications.
