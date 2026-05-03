@@ -1,8 +1,9 @@
 //! Typed collection for CRUD operations
 
+use crate::cursor::Cursor;
 use crate::error::{IndexedDbError, Result};
 use crate::{from_js_value, to_js_value};
-use idb::{Database as IdbDatabase, Query as IdbQuery, TransactionMode};
+use idb::{CursorDirection, Database as IdbDatabase, Query as IdbQuery, TransactionMode};
 use serde::{de::DeserializeOwned, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -17,7 +18,7 @@ pub struct Collection<T> {
 
 impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
     /// Create a new collection
-    pub(crate) fn new(db: Rc<RefCell<IdbDatabase>>, name: String) -> Self {
+    pub fn new(db: Rc<RefCell<IdbDatabase>>, name: String) -> Self {
         Self {
             db,
             name,
@@ -30,7 +31,7 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
     where
         F: FnOnce(&IdbDatabase) -> R,
     {
-        f(&*self.db.borrow())
+        f(&self.db.borrow())
     }
 
     /// Get the database reference (for sync operations)
@@ -41,6 +42,100 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
     /// Get the store name
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    /// Get the name of the underlying database
+    pub fn database_name(&self) -> String {
+        self.db.borrow().name()
+    }
+
+    /// Create a sibling collection on the same database for a different type
+    pub fn sibling_collection<U: Serialize + DeserializeOwned + Clone>(
+        &self,
+        name: &str,
+    ) -> Collection<U> {
+        Collection::new(self.db.clone(), name.to_string())
+    }
+
+    /// Open a cursor for iterating over the collection
+    ///
+    /// # Example
+    /// ```rust,ignore
+    /// let mut cursor = collection.open_cursor(None, Some(CursorDirection::Next)).await?;
+    /// while let Some(item) = cursor.next().await? {
+    ///     println!("{:?}", item);
+    /// }
+    /// ```
+    pub async fn open_cursor(
+        &self,
+        query: Option<IdbQuery>,
+        direction: Option<CursorDirection>,
+    ) -> Result<Cursor<T>> {
+        let transaction = self.with_db(|db| {
+            db.transaction(&[&self.name], TransactionMode::ReadOnly)
+                .map_err(|e| IndexedDbError::Transaction(e.to_string()))
+        })?;
+
+        let store = transaction
+            .object_store(&self.name)
+            .map_err(|_| IndexedDbError::StoreNotFound(self.name.clone()))?;
+
+        let request = store
+            .open_cursor(query, direction)
+            .map_err(|e| IndexedDbError::Database(e.to_string()))?;
+
+        let maybe_cursor = request
+            .await
+            .map_err(|e| IndexedDbError::Database(e.to_string()))?;
+
+        match maybe_cursor {
+            Some(cursor) => Ok(Cursor::new(cursor, transaction)),
+            None => Ok(Cursor::empty(transaction)),
+        }
+    }
+
+    /// Open a cursor on an index
+    ///
+    /// # Example
+    /// ```rust,ignore
+    /// let mut cursor = collection
+    ///     .open_cursor_on_index("email_idx", None, Some(CursorDirection::Next))
+    ///     .await?;
+    /// while let Some(item) = cursor.next().await? {
+    ///     println!("{:?}", item);
+    /// }
+    /// ```
+    pub async fn open_cursor_on_index(
+        &self,
+        index_name: &str,
+        query: Option<IdbQuery>,
+        direction: Option<CursorDirection>,
+    ) -> Result<Cursor<T>> {
+        let transaction = self.with_db(|db| {
+            db.transaction(&[&self.name], TransactionMode::ReadOnly)
+                .map_err(|e| IndexedDbError::Transaction(e.to_string()))
+        })?;
+
+        let store = transaction
+            .object_store(&self.name)
+            .map_err(|_| IndexedDbError::StoreNotFound(self.name.clone()))?;
+
+        let index = store.index(index_name).map_err(|e| {
+            IndexedDbError::Database(format!("Index '{}' not found: {:?}", index_name, e))
+        })?;
+
+        let request = index
+            .open_cursor(query, direction)
+            .map_err(|e| IndexedDbError::Database(e.to_string()))?;
+
+        let maybe_cursor = request
+            .await
+            .map_err(|e| IndexedDbError::Database(e.to_string()))?;
+
+        match maybe_cursor {
+            Some(cursor) => Ok(Cursor::new(cursor, transaction)),
+            None => Ok(Cursor::empty(transaction)),
+        }
     }
 
     /// Get all items in the collection
@@ -65,7 +160,7 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
         let mut items = Vec::new();
         for i in 0..result.len() {
             if let Some(js_value) = result.get(i) {
-                match from_js_value(&js_value) {
+                match from_js_value(js_value) {
                     Ok(item) => items.push(item),
                     Err(e) => {
                         log::warn!("Failed to deserialize item at index {}: {}", i, e);
@@ -154,7 +249,7 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
     }
 
     /// Insert or update an item
-    pub async fn put(&self, key: &str, item: &T) -> Result<()> {
+    pub async fn put(&self, _key: &str, item: &T) -> Result<()> {
         let transaction = self.with_db(|db| {
             db.transaction(&[&self.name], TransactionMode::ReadWrite)
                 .map_err(|e| IndexedDbError::Transaction(e.to_string()))
@@ -295,7 +390,7 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
         let mut items = Vec::new();
         for i in 0..result.len() {
             if let Some(js_value) = result.get(i) {
-                match from_js_value(&js_value) {
+                match from_js_value(js_value) {
                     Ok(item) => items.push(item),
                     Err(e) => {
                         log::warn!("Failed to deserialize item at index {}: {}", i, e);
@@ -351,7 +446,7 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
         if let Some(ref index_name) = query.index_name {
             // Check if we have a single equality filter that matches the index
             if query.filters.len() == 1 {
-                if let Some(crate::query::Filter::Eq(field, value)) = query.filters.first() {
+                if let Some(crate::query::Filter::Eq(_field, value)) = query.filters.first() {
                     // Get the index key path to verify it matches
                     let items = self
                         .get_by_index(index_name, value.as_str().unwrap_or(""))

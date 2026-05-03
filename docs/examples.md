@@ -14,6 +14,7 @@ dx serve --platform web
 - Form data with SessionStorage
 - Todo list with IndexedDB
 - Database migrations demo
+- **Cursor demo** - Iterate large datasets without loading everything into memory
 
 ## Sync Demo
 
@@ -35,6 +36,7 @@ dx serve --platform web
 - Query caching
 - Visual sync logging
 - Pagination
+- **Offline queue demo** - Queue mutations when offline, replay on reconnect
 
 ### Backend API
 
@@ -46,6 +48,10 @@ The demo backend provides:
 | `GET /api/products` | Paginated products |
 | `GET /api/products/search` | Search products |
 | `GET /api/products/categories` | List categories |
+| `GET /api/products/brands` | List brands |
+| `GET /api/tasks/:id` | Fetch a single task |
+| `PUT /api/tasks/:id` | Upsert a task (offline queue demo) |
+| `DELETE /api/tasks/:id` | Delete a task (offline queue demo) |
 
 ### Demo Flow
 
@@ -54,6 +60,7 @@ The demo backend provides:
 3. **Switch to "Hot Sync" mode** - Subsequent loads are instant from cache
 4. **Try "Hard Sync"** - Forces fresh data from backend
 5. **Navigate pages** - Each page is cached separately
+6. **Test offline queue** - Use DevTools Network → Offline, add tasks, then replay
 
 ## Code Examples
 
@@ -61,12 +68,12 @@ The demo backend provides:
 
 ```rust
 use dioxus::prelude::*;
-use dioxus_storage::prelude::*;
+use dioxus_client_storage::prelude::*;
 
 #[component]
 fn Counter() -> Element {
     let count = use_local_storage::<i32>("counter", 0);
-    
+
     rsx! {
         div { class: "counter",
             h2 { "Count: {count.read()}" }
@@ -96,10 +103,10 @@ struct Todo {
 fn TodoList() -> Element {
     let db = use_db(DatabaseConfig::new("todos", 1)
         .with_store("items", "id"));
-    
+
     let todos = use_collection::<Todo>(db, "items");
     let mut new_text = use_signal(String::new);
-    
+
     let add_todo = move |_| {
         let todo = Todo {
             id: uuid::Uuid::new_v4().to_string(),
@@ -109,7 +116,7 @@ fn TodoList() -> Element {
         // Add to collection...
         new_text.set(String::new());
     };
-    
+
     rsx! {
         div { class: "todo-list",
             input {
@@ -129,11 +136,38 @@ fn TodoList() -> Element {
 }
 ```
 
+### Cursor Iteration
+
+```rust
+use dioxus_indexeddb::prelude::*;
+use futures::StreamExt;
+
+let collection = db.collection::<Item>("items");
+
+// Manual iteration
+let mut cursor = collection
+    .open_cursor(None, Some(CursorDirection::Next))
+    .await?;
+while let Some(item) = cursor.next().await? {
+    println!("{}", item.name);
+}
+
+// Stream API
+let cursor = collection
+    .open_cursor(None, Some(CursorDirection::Next))
+    .await?;
+let names: Vec<String> = cursor
+    .into_stream()
+    .filter_map(|r| async move { r.ok().map(|i| i.name) })
+    .collect()
+    .await;
+```
+
 ### User Preferences
 
 ```rust
 use dioxus::prelude::*;
-use dioxus_storage::prelude::*;
+use dioxus_client_storage::prelude::*;
 
 #[derive(Debug, Clone, Default)]
 struct Preferences {
@@ -145,11 +179,11 @@ struct Preferences {
 #[component]
 fn Settings() -> Element {
     let prefs = use_local_storage::<Preferences>("prefs", Preferences::default());
-    
+
     rsx! {
         div { class: "settings",
             h2 { "Preferences" }
-            
+
             select {
                 value: "{prefs.read().theme}",
                 onchange: move |e| {
@@ -160,7 +194,7 @@ fn Settings() -> Element {
                 option { value: "light", "Light Theme" }
                 option { value: "dark", "Dark Theme" }
             }
-            
+
             label {
                 input {
                     r#type: "checkbox",

@@ -10,7 +10,6 @@
 //!   v3.rs    # Migration from v2 to v3
 //! ```
 
-use crate::error::Result;
 use crate::migration::{Migration, MigrationManager, MigrationOp};
 
 /// A set of migrations for a specific version

@@ -3,7 +3,7 @@
 use crate::{
     client::HttpClient,
     config::{ConflictResolution, SyncConfig, SyncMode},
-    traits::{BackendAdapter, Syncable},
+    traits::Syncable,
     Result, SyncError,
 };
 use dioxus_indexeddb::Collection;
@@ -33,6 +33,11 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
         &self.collection
     }
 
+    /// Get the HTTP client
+    pub fn client(&self) -> &HttpClient {
+        &self.client
+    }
+
     /// Hot sync: fetch from backend when local query returns empty
     pub async fn hot_sync(&self, _query: &dioxus_indexeddb::Query) -> Result<Vec<T>> {
         if !self.config.is_hot_sync_enabled() {
@@ -42,7 +47,8 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
         log::info!("Performing hot sync");
 
         // Fetch from backend (simplified - no query params)
-        let items: Vec<T> = self.client.fetch_with_retry("items", None).await?;
+        let path = self.config.resource_path.clone();
+        let items: Vec<T> = self.client.fetch_with_retry(&path, None).await?;
 
         // Store locally
         for item in &items {
@@ -57,16 +63,15 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
     /// Fetch single item with hot sync fallback
     pub async fn get_with_sync(&self, id: &str) -> Result<Option<T>> {
         // Try local first
-        match self.collection.get(id).await {
-            Ok(Some(item)) => return Ok(Some(item)),
-            _ => {}
+        if let Ok(Some(item)) = self.collection.get(id).await {
+            return Ok(Some(item));
         }
 
         // If hot sync enabled, fetch from backend
         if self.config.is_hot_sync_enabled() {
             log::info!("Item {} not found locally, fetching from backend", id);
 
-            let path = format!("items/{}", id);
+            let path = format!("{}/{}", self.config.resource_path, id);
             match self.client.get(&path).await {
                 Ok(item) => {
                     // Store locally
@@ -129,10 +134,11 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
 
         // Fetch from backend
         let items: Vec<T> = if let Some(p) = params {
-            self.client.fetch_with_retry("items/sync", Some(&p)).await?
+            let path = format!("{}/sync", self.config.resource_path);
+            self.client.fetch_with_retry(&path, Some(&p)).await?
         } else {
             self.client
-                .fetch_with_retry::<Vec<T>>("items", None)
+                .fetch_with_retry::<Vec<T>>(&self.config.resource_path, None)
                 .await?
         };
 
@@ -187,9 +193,13 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
 
         // Push in batches
         for chunk in dirty_items.chunks(self.config.batch_size) {
-            let path = "items/batch";
+            let path = format!("{}/batch", self.config.resource_path);
 
-            match self.client.post::<serde_json::Value, _>(path, &chunk).await {
+            match self
+                .client
+                .post::<serde_json::Value, _>(&path, &chunk)
+                .await
+            {
                 Ok(_) => {
                     result.pushed += chunk.len();
 
@@ -290,29 +300,6 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
         // For now, just log - in production this would update a metadata store
         log::info!("Sync timestamp updated");
         Ok(())
-    }
-}
-
-/// Sync metadata stored in IndexedDB
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-struct SyncMetadata {
-    id: String,
-    timestamp: i64,
-}
-
-impl Syncable for SyncMetadata {
-    fn sync_id(&self) -> String {
-        self.id.clone()
-    }
-
-    fn sync_timestamp(&self) -> i64 {
-        self.timestamp
-    }
-
-    fn mark_synced(&mut self) {}
-
-    fn is_dirty(&self) -> bool {
-        false
     }
 }
 

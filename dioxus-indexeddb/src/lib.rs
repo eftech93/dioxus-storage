@@ -31,6 +31,7 @@
 #![cfg(target_arch = "wasm32")]
 
 mod collection;
+mod cursor;
 mod database;
 mod error;
 mod hooks;
@@ -41,6 +42,7 @@ mod transaction;
 pub mod schema;
 
 pub use collection::Collection;
+pub use cursor::{Cursor, CursorBound};
 pub use database::{Database, DatabaseConfig, IndexConfig, StoreConfig};
 pub use error::{IndexedDbError, Result};
 pub use hooks::{use_collection, use_db, use_query};
@@ -51,8 +53,8 @@ pub use query::{
 };
 pub use transaction::Transaction;
 
-// Re-export idb Query type for index operations
-pub use idb::Query as IdbQuery;
+// Re-export idb types for advanced usage
+pub use idb::{CursorDirection, KeyRange, Query as IdbQuery};
 
 pub use schema::{Schema, SchemaDatabase, Store, StoreDefinition};
 
@@ -62,9 +64,12 @@ pub mod prelude {
     pub use super::schema::{Schema, SchemaDatabase, Store, StoreDefinition};
     pub use super::{execute_query, Filter, Order, Query, QueryResult};
     pub use super::{use_collection, use_db, use_query};
-    pub use super::{Collection, Database, DatabaseConfig, IndexedDbError, Result};
+    pub use super::{
+        Collection, Cursor, CursorBound, Database, DatabaseConfig, IndexedDbError, Result,
+    };
     pub use super::{DatabaseBuilder, Migration, MigrationManager, MigrationOp};
     pub use super::{IndexConfig, StoreConfig};
+    pub use idb::{CursorDirection, KeyRange};
 }
 
 use wasm_bindgen::JsValue;

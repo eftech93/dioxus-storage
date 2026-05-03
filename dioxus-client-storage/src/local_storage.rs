@@ -4,7 +4,6 @@ use crate::error::{Result, StorageError};
 use dioxus::hooks::*;
 use dioxus_signals::*;
 use serde::{de::DeserializeOwned, Serialize};
-use wasm_bindgen::JsCast;
 
 /// LocalStorage wrapper with type-safe API
 #[derive(Debug, Clone)]
@@ -155,37 +154,6 @@ pub fn use_local_storage<T: Serialize + DeserializeOwned + Clone>(
             let value = signal.read().clone();
             if let Err(e) = LocalStorage::set(&key, &value) {
                 log::warn!("Failed to save to LocalStorage: {}", e);
-            }
-        });
-    }
-
-    signal
-}
-
-/// Hook for optional LocalStorage value
-pub fn use_local_storage_opt<T: Serialize + DeserializeOwned + Clone>(
-    key: impl Into<String>,
-) -> Signal<Option<T>> {
-    let key = key.into();
-
-    let initial = LocalStorage::get::<T>(&key).ok().flatten();
-    let signal = use_signal(|| initial);
-
-    {
-        let key = key.clone();
-        use_effect(move || {
-            let value = signal.read().clone();
-            match value {
-                Some(v) => {
-                    if let Err(e) = LocalStorage::set(&key, &v) {
-                        log::warn!("Failed to save to LocalStorage: {}", e);
-                    }
-                }
-                None => {
-                    if let Err(e) = LocalStorage::remove(&key) {
-                        log::warn!("Failed to remove from LocalStorage: {}", e);
-                    }
-                }
             }
         });
     }

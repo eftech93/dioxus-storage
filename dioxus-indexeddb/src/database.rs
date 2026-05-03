@@ -2,7 +2,7 @@
 
 use crate::collection::Collection;
 use crate::error::{IndexedDbError, Result};
-use crate::migration::{Migration, MigrationManager};
+use crate::migration::MigrationManager;
 use idb::{
     Database as IdbDatabase, DatabaseEvent, Factory, IndexParams, KeyPath, ObjectStoreParams,
 };
@@ -131,6 +131,12 @@ pub struct Database {
     inner: Rc<RefCell<IdbDatabase>>,
 }
 
+impl PartialEq for Database {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.inner, &other.inner)
+    }
+}
+
 impl Database {
     /// Open a database with the given configuration
     pub async fn open(config: DatabaseConfig) -> Result<Self> {
@@ -246,7 +252,7 @@ impl Database {
     where
         F: FnOnce(&IdbDatabase) -> R,
     {
-        f(&*self.inner.borrow())
+        f(&self.inner.borrow())
     }
 
     /// Check if a store exists

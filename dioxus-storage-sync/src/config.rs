@@ -7,6 +7,8 @@ use std::time::Duration;
 pub struct SyncConfig {
     /// Backend API base URL
     pub api_url: String,
+    /// Resource path segment for API endpoints (e.g. "products", "tasks")
+    pub resource_path: String,
     /// Enable hot sync (on-demand fetching)
     pub hot_sync: bool,
     /// Enable background sync with interval
@@ -26,9 +28,10 @@ pub struct SyncConfig {
 }
 
 /// Sync mode
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SyncMode {
     /// Pull from backend and push local changes
+    #[default]
     Bidirectional,
     /// Only pull from backend
     PullOnly,
@@ -36,29 +39,18 @@ pub enum SyncMode {
     PushOnly,
 }
 
-impl Default for SyncMode {
-    fn default() -> Self {
-        SyncMode::Bidirectional
-    }
-}
-
 /// Conflict resolution strategies
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ConflictResolution {
     /// Prefer server version
     ServerWins,
     /// Prefer local version
     LocalWins,
     /// Use timestamp (last write wins)
+    #[default]
     LastWriteWins,
     /// Custom resolution (manual merge required)
     Manual,
-}
-
-impl Default for ConflictResolution {
-    fn default() -> Self {
-        ConflictResolution::LastWriteWins
-    }
 }
 
 impl SyncConfig {
@@ -66,6 +58,7 @@ impl SyncConfig {
     pub fn new(api_url: impl Into<String>) -> Self {
         Self {
             api_url: api_url.into(),
+            resource_path: "items".to_string(),
             hot_sync: false,
             background_sync: None,
             auth_token: None,
@@ -75,6 +68,12 @@ impl SyncConfig {
             headers: Vec::new(),
             mode: SyncMode::default(),
         }
+    }
+
+    /// Set the resource path for API endpoints
+    pub fn with_resource_path(mut self, path: impl Into<String>) -> Self {
+        self.resource_path = path.into();
+        self
     }
 
     /// Enable hot sync
