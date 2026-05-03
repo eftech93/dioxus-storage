@@ -23,7 +23,7 @@ pub struct SyncManager<T: Syncable> {
     config: SyncConfig,
     status: Signal<SyncStatus>,
     is_running: Rc<RefCell<bool>>,
-    queue: OfflineQueue<T>,
+    _queue: OfflineQueue<T>,
     queue_collection: Signal<Option<Collection<crate::offline_queue::QueuedOperation<T>>>>,
 }
 
@@ -94,7 +94,7 @@ impl<T: Syncable + Serialize + DeserializeOwned + Clone> SyncManager<T> {
                         config,
                         status,
                         is_running: Rc::new(RefCell::new(false)),
-                        queue: OfflineQueue::new(),
+                        _queue: OfflineQueue::new(),
                         queue_collection,
                     };
                 }
@@ -137,7 +137,7 @@ impl<T: Syncable + Serialize + DeserializeOwned + Clone> SyncManager<T> {
             config,
             status,
             is_running: Rc::new(RefCell::new(false)),
-            queue: OfflineQueue::new(),
+            _queue: OfflineQueue::new(),
             queue_collection,
         }
     }
@@ -473,14 +473,6 @@ impl<T: Syncable + Serialize + DeserializeOwned + Clone> SyncManager<T> {
 
         result
     }
-}
-
-/// Hook for using sync manager
-pub fn use_sync_manager<T: Syncable + Serialize + DeserializeOwned + Clone>(
-    collection: Collection<T>,
-    config: SyncConfig,
-) -> SyncManager<T> {
-    SyncManager::new(collection, config)
 }
 
 /// Check if the browser is currently online

@@ -144,7 +144,7 @@ fn handle_error_status(status: reqwest::StatusCode) -> SyncError {
     match status.as_u16() {
         401 => SyncError::Unauthorized,
         429 => SyncError::RateLimited,
-        503 | 502 | 504 => SyncError::BackendUnavailable,
+        502..=504 => SyncError::BackendUnavailable,
         _ => SyncError::Http(format!("HTTP {}", status)),
     }
 }

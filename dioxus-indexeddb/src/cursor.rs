@@ -25,7 +25,7 @@
 
 use crate::error::{IndexedDbError, Result};
 use crate::from_js_value;
-use idb::{CursorDirection, ManagedCursor, Query as IdbQuery, Transaction, TransactionMode};
+use idb::{ManagedCursor, Query as IdbQuery, Transaction};
 use serde::de::DeserializeOwned;
 
 /// A typed cursor for iterating over IndexedDB records efficiently.
@@ -109,7 +109,7 @@ impl<T: DeserializeOwned> Cursor<T> {
         let js_value = inner
             .value()
             .map_err(|e| IndexedDbError::Database(e.to_string()))?;
-        Ok(js_value.map(|js| from_js_value(&js)).transpose()?)
+        js_value.map(|js| from_js_value(&js)).transpose()
     }
 
     /// Convert this cursor into a [`futures::Stream`].

@@ -147,34 +147,3 @@ pub fn use_session_storage<T: Serialize + DeserializeOwned + Clone>(
 
     signal
 }
-
-/// Hook for optional SessionStorage value
-pub fn use_session_storage_opt<T: Serialize + DeserializeOwned + Clone>(
-    key: impl Into<String>,
-) -> Signal<Option<T>> {
-    let key = key.into();
-
-    let initial = SessionStorage::get::<T>(&key).ok().flatten();
-    let signal = use_signal(|| initial);
-
-    {
-        let key = key.clone();
-        use_effect(move || {
-            let value = signal.read().clone();
-            match value {
-                Some(v) => {
-                    if let Err(e) = SessionStorage::set(&key, &v) {
-                        log::warn!("Failed to save to SessionStorage: {}", e);
-                    }
-                }
-                None => {
-                    if let Err(e) = SessionStorage::remove(&key) {
-                        log::warn!("Failed to remove from SessionStorage: {}", e);
-                    }
-                }
-            }
-        });
-    }
-
-    signal
-}

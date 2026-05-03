@@ -31,7 +31,7 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
     where
         F: FnOnce(&IdbDatabase) -> R,
     {
-        f(&*self.db.borrow())
+        f(&self.db.borrow())
     }
 
     /// Get the database reference (for sync operations)
@@ -160,7 +160,7 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
         let mut items = Vec::new();
         for i in 0..result.len() {
             if let Some(js_value) = result.get(i) {
-                match from_js_value(&js_value) {
+                match from_js_value(js_value) {
                     Ok(item) => items.push(item),
                     Err(e) => {
                         log::warn!("Failed to deserialize item at index {}: {}", i, e);
@@ -249,7 +249,7 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
     }
 
     /// Insert or update an item
-    pub async fn put(&self, key: &str, item: &T) -> Result<()> {
+    pub async fn put(&self, _key: &str, item: &T) -> Result<()> {
         let transaction = self.with_db(|db| {
             db.transaction(&[&self.name], TransactionMode::ReadWrite)
                 .map_err(|e| IndexedDbError::Transaction(e.to_string()))
@@ -390,7 +390,7 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
         let mut items = Vec::new();
         for i in 0..result.len() {
             if let Some(js_value) = result.get(i) {
-                match from_js_value(&js_value) {
+                match from_js_value(js_value) {
                     Ok(item) => items.push(item),
                     Err(e) => {
                         log::warn!("Failed to deserialize item at index {}: {}", i, e);
@@ -446,7 +446,7 @@ impl<T: Serialize + DeserializeOwned + Clone> Collection<T> {
         if let Some(ref index_name) = query.index_name {
             // Check if we have a single equality filter that matches the index
             if query.filters.len() == 1 {
-                if let Some(crate::query::Filter::Eq(field, value)) = query.filters.first() {
+                if let Some(crate::query::Filter::Eq(_field, value)) = query.filters.first() {
                     // Get the index key path to verify it matches
                     let items = self
                         .get_by_index(index_name, value.as_str().unwrap_or(""))

@@ -3,7 +3,7 @@
 use crate::{
     client::HttpClient,
     config::{ConflictResolution, SyncConfig, SyncMode},
-    traits::{BackendAdapter, Syncable},
+    traits::Syncable,
     Result, SyncError,
 };
 use dioxus_indexeddb::Collection;
@@ -63,9 +63,8 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
     /// Fetch single item with hot sync fallback
     pub async fn get_with_sync(&self, id: &str) -> Result<Option<T>> {
         // Try local first
-        match self.collection.get(id).await {
-            Ok(Some(item)) => return Ok(Some(item)),
-            _ => {}
+        if let Ok(Some(item)) = self.collection.get(id).await {
+            return Ok(Some(item));
         }
 
         // If hot sync enabled, fetch from backend

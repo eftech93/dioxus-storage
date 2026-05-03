@@ -31,7 +31,7 @@
 
 use crate::collection::Collection;
 use crate::database::Database;
-use crate::error::{IndexedDbError, Result};
+use crate::error::Result;
 use serde::{de::DeserializeOwned, Serialize};
 
 pub mod migration_set;

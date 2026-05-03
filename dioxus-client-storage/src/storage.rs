@@ -1,6 +1,6 @@
 //! Unified storage API
 
-use crate::error::{Result, StorageError};
+use crate::error::Result;
 use crate::local_storage::LocalStorage;
 use crate::session_storage::SessionStorage;
 use dioxus::hooks::*;
@@ -146,33 +146,6 @@ impl Storage {
 /// ```
 pub fn use_storage(config: StorageConfig) -> Signal<Storage> {
     use_signal(|| Storage::new(config))
-}
-
-/// Hook for a specific storage value
-pub fn use_storage_value<T: Serialize + DeserializeOwned + Clone>(
-    storage: &Storage,
-    key: impl Into<String>,
-    default: T,
-) -> Signal<T> {
-    let key = key.into();
-    let storage = storage.clone();
-
-    let initial = storage.get::<T>(&key).ok().flatten().unwrap_or(default);
-
-    let signal = use_signal(|| initial);
-
-    {
-        let key = key.clone();
-        let storage = storage.clone();
-        use_effect(move || {
-            let value = signal.read().clone();
-            if let Err(e) = storage.set(&key, &value) {
-                log::warn!("Failed to save to storage: {}", e);
-            }
-        });
-    }
-
-    signal
 }
 
 /// Hook for IndexedDB database (when using IndexedDB backend)

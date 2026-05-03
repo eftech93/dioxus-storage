@@ -2,7 +2,7 @@
 
 use crate::collection::Collection;
 use crate::error::{IndexedDbError, Result};
-use crate::migration::{Migration, MigrationManager};
+use crate::migration::MigrationManager;
 use idb::{
     Database as IdbDatabase, DatabaseEvent, Factory, IndexParams, KeyPath, ObjectStoreParams,
 };
@@ -252,7 +252,7 @@ impl Database {
     where
         F: FnOnce(&IdbDatabase) -> R,
     {
-        f(&*self.inner.borrow())
+        f(&self.inner.borrow())
     }
 
     /// Check if a store exists

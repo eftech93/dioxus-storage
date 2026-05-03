@@ -298,11 +298,6 @@ impl DatabaseBuilder {
         self
     }
 
-    /// Get the configured migrations
-    pub(crate) fn migrations(&self) -> &[Migration] {
-        &self.migrations
-    }
-
     /// Get the database name
     pub fn name(&self) -> &str {
         &self.name

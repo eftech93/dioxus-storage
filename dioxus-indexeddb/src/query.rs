@@ -16,7 +16,6 @@
 //!     .await?;
 //! ```
 
-use crate::error::Result;
 use serde::{de::DeserializeOwned, Serialize};
 use std::collections::HashMap;
 
@@ -42,18 +41,13 @@ pub struct Query {
 }
 
 /// Filter combination mode
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum FilterMode {
     /// All filters must match (AND)
+    #[default]
     And,
     /// Any filter can match (OR)
     Or,
-}
-
-impl Default for FilterMode {
-    fn default() -> Self {
-        FilterMode::And
-    }
 }
 
 /// Order clause

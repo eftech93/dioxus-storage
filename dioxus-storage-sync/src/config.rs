@@ -28,9 +28,10 @@ pub struct SyncConfig {
 }
 
 /// Sync mode
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SyncMode {
     /// Pull from backend and push local changes
+    #[default]
     Bidirectional,
     /// Only pull from backend
     PullOnly,
@@ -38,29 +39,18 @@ pub enum SyncMode {
     PushOnly,
 }
 
-impl Default for SyncMode {
-    fn default() -> Self {
-        SyncMode::Bidirectional
-    }
-}
-
 /// Conflict resolution strategies
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ConflictResolution {
     /// Prefer server version
     ServerWins,
     /// Prefer local version
     LocalWins,
     /// Use timestamp (last write wins)
+    #[default]
     LastWriteWins,
     /// Custom resolution (manual merge required)
     Manual,
-}
-
-impl Default for ConflictResolution {
-    fn default() -> Self {
-        ConflictResolution::LastWriteWins
-    }
 }
 
 impl SyncConfig {
