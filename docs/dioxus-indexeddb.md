@@ -122,6 +122,8 @@ Executes a query and returns reactive results.
 | `clear() -> Result<()>` | Clear all items |
 | `query(query: Query) -> Result<Vec<T>>` | Execute a filtered query |
 | `find(query: &Query) -> Result<QueryResult<T>>` | Execute query with index optimization |
+| `open_cursor(query, direction) -> Result<Cursor<T>>` | Open a cursor for iteration |
+| `open_cursor_on_index(index, query, direction) -> Result<Cursor<T>>` | Open a cursor on an index |
 
 ### Query Builder
 
@@ -148,6 +150,63 @@ let query = Query::new()
 - `Filter::contains(field, value)` - String contains
 - `Filter::starts_with(field, value)` - String starts with
 - `Filter::ends_with(field, value)` - String ends with
+
+## Cursors
+
+Cursors provide efficient iteration over large datasets without loading everything into memory.
+
+### Basic Cursor Iteration
+
+```rust
+use dioxus_indexeddb::prelude::*;
+
+let collection = db.collection::<Product>("products");
+
+// Iterate forward
+let mut cursor = collection.open_cursor(None, Some(CursorDirection::Next)).await?;
+while let Some(product) = cursor.next().await? {
+    println!("Product: {}", product.name);
+}
+```
+
+### Range-based Cursors
+
+```rust
+use dioxus_indexeddb::{CursorBound, CursorDirection};
+
+let bound = CursorBound::Range {
+    lower: "electronics".to_string(),
+    upper: "furniture".to_string(),
+    lower_open: false,
+    upper_open: false,
+};
+
+let query = Some(bound.to_query()?);
+let mut cursor = collection.open_cursor(query, Some(CursorDirection::Next)).await?;
+```
+
+### Reverse Iteration
+
+```rust
+let mut cursor = collection.open_cursor(None, Some(CursorDirection::Prev)).await?;
+while let Some(product) = cursor.next().await? {
+    println!("Product (reverse): {}", product.name);
+}
+```
+
+### Stream API
+
+```rust
+use futures::StreamExt;
+
+let stream = collection.open_cursor(None, Some(CursorDirection::Next)).await?.into_stream();
+while let Some(result) = stream.next().await {
+    match result {
+        Ok(product) => println!("{}", product.name),
+        Err(e) => log::error!("Cursor error: {}", e),
+    }
+}
+```
 
 ## Database Migrations
 

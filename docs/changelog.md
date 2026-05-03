@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2025-05-02
+
+### Added
+
+#### dioxus-indexeddb
+- **Cursor-based Iteration** - Efficient traversal of large datasets
+  - `Cursor<T>` - Typed cursor with `next()`, `advance()`, and `into_stream()`
+  - `Collection::open_cursor()` - Open a cursor on a collection
+  - `Collection::open_cursor_on_index()` - Open a cursor on an index
+  - `CursorDirection` support (Next, NextUnique, Prev, PrevUnique)
+  - `CursorBound` - Convenient range bounds (Only, LowerBound, UpperBound, Range)
+  - `into_stream()` converts a cursor into a `futures::Stream`
+
+#### dioxus-storage-sync
+- **Offline Queue** - Queue mutations when offline and replay when restored
+  - Detects online/offline status via browser events
+  - Queues `Insert`, `Update`, and `Delete` operations when offline
+  - Persists queue to a dedicated IndexedDB database
+  - Automatically replays queue during background sync when back online
+  - Conflict resolution during replay (ServerWins, Manual, etc.)
+  - Queue status exposed in `SyncStatus` (`queue_pending`, `queue_replaying`, `is_online`)
+  - `SyncManager::replay_queue()` for manual replay
+
 ## [0.0.2] - 2025-04-05
 
 ### Added

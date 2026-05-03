@@ -131,6 +131,12 @@ pub struct Database {
     inner: Rc<RefCell<IdbDatabase>>,
 }
 
+impl PartialEq for Database {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.inner, &other.inner)
+    }
+}
+
 impl Database {
     /// Open a database with the given configuration
     pub async fn open(config: DatabaseConfig) -> Result<Self> {

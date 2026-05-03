@@ -1,6 +1,6 @@
 [package]
 name = "dioxus-client-storage"
-version = "0.0.2"
+version = "0.0.3"
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
@@ -23,7 +23,7 @@ js-sys = { workspace = true }
 web-sys = { workspace = true }
 
 # Re-export IndexedDB
-dioxus-indexeddb = { path = "../dioxus-indexeddb", version = "0.0.2", optional = true }
+dioxus-indexeddb = { path = "../dioxus-indexeddb", version = "0.0.3", optional = true }
 
 # Serialization
 serde = { workspace = true }

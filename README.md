@@ -43,6 +43,7 @@ fn UserList() -> Element {
 - Dioxus hooks: `use_db`, `use_collection`, `use_query`
 - Query builder with filtering and sorting
 - **Index support** for fast queries
+- **Cursor-based iteration** for large datasets without loading everything into memory
 - Multi-store transactions
 - Async/await API
 
@@ -103,6 +104,7 @@ fn ProductList() -> Element {
 - 🌙 **Background Sync** - Periodic synchronization
 - 📊 **Conflict Resolution** - Handle simultaneous updates
 - 🔄 **Bidirectional** - Push local changes to server
+- 📴 **Offline Queue** - Queue mutations when offline and replay when connection is restored
 
 ## Examples
 

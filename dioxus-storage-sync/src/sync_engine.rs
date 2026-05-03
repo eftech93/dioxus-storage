@@ -33,6 +33,11 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
         &self.collection
     }
 
+    /// Get the HTTP client
+    pub fn client(&self) -> &HttpClient {
+        &self.client
+    }
+
     /// Hot sync: fetch from backend when local query returns empty
     pub async fn hot_sync(&self, _query: &dioxus_indexeddb::Query) -> Result<Vec<T>> {
         if !self.config.is_hot_sync_enabled() {

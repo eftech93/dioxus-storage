@@ -39,12 +39,14 @@ use thiserror::Error;
 mod client;
 mod config;
 mod manager;
+mod offline_queue;
 mod sync_engine;
 mod traits;
 
 pub use client::{HttpClient, SyncClient};
 pub use config::{ConflictResolution, SyncConfig, SyncMode};
 pub use manager::{SyncManager, SyncStatus};
+pub use offline_queue::{OfflineQueue, QueueOp, QueueReplayResult, QueuedOperation};
 pub use sync_engine::{SyncEngine, SyncResult};
 pub use traits::{BackendAdapter, Syncable};
 
@@ -106,6 +108,7 @@ pub mod prelude {
     pub use super::{ConflictResolution, SyncConfig, SyncMode};
     pub use super::{HttpClient, SyncClient};
     pub use super::{Result, SyncError};
+    pub use super::{OfflineQueue, QueueOp, QueueReplayResult, QueuedOperation};
     pub use super::{SyncEngine, SyncResult};
     pub use super::{SyncManager, SyncStatus};
     pub use dioxus_signals::Signal;

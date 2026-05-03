@@ -3,6 +3,7 @@ use dioxus_logger::tracing::Level;
 
 mod components;
 mod models;
+mod queue_demo;
 mod sync;
 
 use components::{FilterPanel, Pagination, ProductCard, SyncLogViewer};
@@ -20,20 +21,20 @@ fn main() {
 #[component]
 fn App() -> Element {
     // IndexedDB state
-    let mut db = use_signal(|| None::<dioxus_indexeddb::database::Database>);
+    let mut db = use_signal(|| None::<dioxus_indexeddb::Database>);
     let mut local_product_count = use_signal(|| 0usize);
     let mut last_sync_time = use_signal(|| None::<String>);
 
     // UI State
-    let mut products = use_signal(Vec::<Product>::new);
+    let products = use_signal(Vec::<Product>::new);
     let mut filtered_products = use_signal(Vec::<Product>::new);
     let mut current_page = use_signal(|| 1u32);
     let total_pages = use_signal(|| 20u32);
-    let mut is_loading = use_signal(|| false);
+    let is_loading = use_signal(|| false);
     let mut search_query = use_signal(String::new);
     let mut selected_category = use_signal(|| None::<String>);
     let mut sync_mode = use_signal(|| SyncMode::Hot);
-    let mut sync_events = use_signal(Vec::<SyncEvent>::new);
+    let sync_events = use_signal(Vec::<SyncEvent>::new);
     let _background_sync_active = use_signal(|| false);
 
     // Initialize IndexedDB on mount
@@ -456,6 +457,7 @@ fn App() -> Element {
 
                 div { class: "sync-panel",
                     SyncLogViewer { events: sync_events.read().clone() }
+                    queue_demo::OfflineQueueDemo {}
                 }
             }
         }

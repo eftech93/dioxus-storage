@@ -15,6 +15,7 @@ dioxus-storage-sync = "0.0.1"
 - 🌙 **Background Sync** - Periodic synchronization
 - 📊 **Conflict Resolution** - Handle simultaneous updates
 - 🔄 **Bidirectional** - Push local changes to server
+- 📴 **Offline Queue** - Queue mutations when offline and replay when restored
 
 ## Basic Usage
 
@@ -142,6 +143,52 @@ let config = SyncConfig::new("https://api.example.com")
         // Custom merge logic
         merge_documents(local, remote)
     });
+```
+
+## Offline Queue
+
+The sync manager automatically detects when the browser goes offline and queues mutations. When connectivity is restored, the queue is replayed automatically during the next background sync.
+
+### How It Works
+
+- **Save/Delete** operations check the browser's online status.
+- If **offline**, the operation is stored in a dedicated IndexedDB queue.
+- When the browser comes **back online**, the queue is replayed against the backend.
+- **Conflicts** during replay are handled according to the configured `ConflictResolution`.
+
+### Manual Replay
+
+```rust
+let manager = use_sync_manager(collection, config);
+
+// Manually trigger queue replay
+let result = manager.replay_queue().await?;
+println!("Replayed: {}, Failed: {}, Conflicts: {}",
+    result.success, result.failed, result.conflicts);
+```
+
+### Queue Status in UI
+
+```rust
+#[component]
+fn QueueStatus() -> Element {
+    let manager = use_sync_manager(collection, config);
+    let status = manager.status.read();
+
+    rsx! {
+        div { class: "queue-status",
+            if !status.is_online {
+                span { "📴 Offline — {} operations queued", status.queue_pending }
+            } else if status.queue_replaying {
+                span { "🔄 Replaying queue..." }
+            } else if status.queue_pending > 0 {
+                span { "⏳ {} operations pending", status.queue_pending }
+            } else {
+                span { "✅ Queue empty" }
+            }
+        }
+    }
+}
 ```
 
 ## Sync Status

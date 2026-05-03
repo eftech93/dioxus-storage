@@ -5,6 +5,7 @@
 use dioxus::prelude::*;
 use dioxus_client_storage::prelude::*;
 use dioxus_indexeddb::prelude::*;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -23,6 +24,7 @@ fn app() -> Element {
                 LocalStorageDemo {}
                 SessionStorageDemo {}
                 IndexedDbDemo {}
+                CursorDemo {}
             }
         }
     }
@@ -413,6 +415,139 @@ fn TaskItem(task: Task, on_toggle: EventHandler<Task>, on_delete: EventHandler<S
     }
 }
 
+// =============================================================================
+// Cursor Demo
+// =============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+struct CursorItem {
+    id: String,
+    label: String,
+}
+
+#[component]
+fn CursorDemo() -> Element {
+    let mut db = use_signal(|| None::<Database>);
+    let mut items = use_signal(Vec::<CursorItem>::new);
+    let mut cursor_result = use_signal(|| "".to_string());
+
+    use_effect(move || {
+        spawn(async move {
+            let _ = Database::delete("cursor_demo_db").await;
+            let config = DatabaseConfig::new("cursor_demo_db", 1)
+                .with_store("items", "id");
+
+            match Database::open(config).await {
+                Ok(database) => {
+                    let collection: Collection<CursorItem> = database.collection("items");
+                    for i in 1..=5 {
+                        let item = CursorItem {
+                            id: format!("item-{}", i),
+                            label: format!("Item {}", i),
+                        };
+                        let _ = collection.put(&item.id, &item).await;
+                    }
+                    if let Ok(all) = collection.get_all().await {
+                        items.set(all);
+                    }
+                    db.set(Some(database));
+                }
+                Err(e) => log::error!("Cursor demo DB error: {}", e),
+            }
+        });
+    });
+
+    let iterate_forward = move |_| {
+        let db = db.clone();
+        let mut result = cursor_result.clone();
+        spawn(async move {
+            if let Some(ref database) = *db.read() {
+                let collection: Collection<CursorItem> = database.collection("items");
+                match collection.open_cursor(None, Some(CursorDirection::Next)).await {
+                    Ok(mut cursor) => {
+                        let mut labels = Vec::new();
+                        while let Some(item) = cursor.next().await.unwrap_or(None) {
+                            labels.push(item.label);
+                        }
+                        result.set(format!("Forward: {}", labels.join(" → ")));
+                    }
+                    Err(e) => result.set(format!("Error: {}", e)),
+                }
+            }
+        });
+    };
+
+    let iterate_backward = move |_| {
+        let db = db.clone();
+        let mut result = cursor_result.clone();
+        spawn(async move {
+            if let Some(ref database) = *db.read() {
+                let collection: Collection<CursorItem> = database.collection("items");
+                match collection.open_cursor(None, Some(CursorDirection::Prev)).await {
+                    Ok(mut cursor) => {
+                        let mut labels = Vec::new();
+                        while let Some(item) = cursor.next().await.unwrap_or(None) {
+                            labels.push(item.label);
+                        }
+                        result.set(format!("Backward: {}", labels.join(" → ")));
+                    }
+                    Err(e) => result.set(format!("Error: {}", e)),
+                }
+            }
+        });
+    };
+
+    let stream_iteration = move |_| {
+        let db = db.clone();
+        let mut result = cursor_result.clone();
+        spawn(async move {
+            if let Some(ref database) = *db.read() {
+                let collection: Collection<CursorItem> = database.collection("items");
+                match collection.open_cursor(None, Some(CursorDirection::Next)).await {
+                    Ok(cursor) => {
+                        use futures::StreamExt;
+                        let stream = cursor.into_stream();
+                        let collected: Vec<String> = stream
+                            .filter_map(|r| async move { r.ok().map(|t| t.label) })
+                            .collect()
+                            .await;
+                        result.set(format!("Stream: {}", collected.join(" → ")));
+                    }
+                    Err(e) => result.set(format!("Error: {}", e)),
+                }
+            }
+        });
+    };
+
+    rsx! {
+        div { class: "card cursor-demo",
+            h2 { "🖱️ Cursor Demo" }
+            p { class: "description", "Iterate large datasets without loading everything into memory" }
+
+            div { class: "cursor-controls",
+                button { onclick: iterate_forward, "⏩ Iterate Forward" }
+                button { onclick: iterate_backward, "⏪ Iterate Backward" }
+                button { onclick: stream_iteration, "🌊 Stream API" }
+            }
+
+            div { class: "cursor-result",
+                if cursor_result.read().is_empty() {
+                    "Click a button above to iterate via cursor"
+                } else {
+                    "{cursor_result.read()}"
+                }
+            }
+
+            div { class: "cursor-items",
+                h3 { "Items in DB" }
+                for item in items.read().iter() {
+                    span { class: "cursor-item", "{item.label}" }
+                }
+            }
+        }
+    }
+}
+
 const CSS: &str = r#"
 * { box-sizing: border-box; }
 
@@ -667,5 +802,59 @@ button:disabled {
 
 .task.priority-low {
     border-left-color: #22c55e;
+}
+
+/* Cursor Demo */
+.cursor-demo {
+    grid-column: span 1;
+}
+
+.cursor-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.cursor-controls button {
+    background: #8b5cf6;
+}
+
+.cursor-controls button:hover {
+    background: #7c3aed;
+}
+
+.cursor-result {
+    background: #f3f4f6;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    min-height: 44px;
+}
+
+.cursor-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.cursor-items h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #666;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.cursor-item {
+    background: #e0e7ff;
+    color: #4338ca;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 "#;

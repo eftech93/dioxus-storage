@@ -182,6 +182,43 @@ let results = collection.find(
 
 **Returns:** `Result<QueryResult<T>>`
 
+### `open_cursor`
+
+Open a cursor for efficient iteration over large datasets.
+
+```rust
+let mut cursor = collection.open_cursor(None, Some(CursorDirection::Next)).await?;
+while let Some(item) = cursor.next().await? {
+    println!("{:?}", item);
+}
+```
+
+**Parameters:**
+- `query: Option<IdbQuery>` - Optional key or range query
+- `direction: Option<CursorDirection>` - Cursor direction (Next, Prev, etc.)
+
+**Returns:** `Result<Cursor<T>>`
+
+### `open_cursor_on_index`
+
+Open a cursor on an index.
+
+```rust
+let mut cursor = collection
+    .open_cursor_on_index("email_idx", None, Some(CursorDirection::Next))
+    .await?;
+while let Some(item) = cursor.next().await? {
+    println!("{:?}", item);
+}
+```
+
+**Parameters:**
+- `index_name: &str` - Name of the index
+- `query: Option<IdbQuery>` - Optional key or range query
+- `direction: Option<CursorDirection>` - Cursor direction
+
+**Returns:** `Result<Cursor<T>>`
+
 ## Example Usage
 
 ```rust
