@@ -1,8 +1,8 @@
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::get,
+    routing::{get, put},
     Json, Router,
 };
 use futures_util::stream::TryStreamExt;
@@ -59,11 +59,20 @@ pub struct GetProductsQuery {
     pub sort_order: Option<String>,
 }
 
+// Task model for offline queue demo
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Task {
+    pub id: String,
+    pub title: String,
+    pub completed: bool,
+}
+
 // App state
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<Client>,
     pub products_collection: Collection<Product>,
+    pub tasks_collection: Collection<Task>,
 }
 
 #[tokio::main]
@@ -95,9 +104,14 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Connected to MongoDB successfully");
 
+    let tasks_collection = db.collection::<Task>("tasks");
+
+    info!("Connected to MongoDB successfully");
+
     let app_state = AppState {
         db: Arc::new(client),
         products_collection,
+        tasks_collection,
     };
 
     // Build router
@@ -107,6 +121,9 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/products/search", get(search_products))
         .route("/api/products/categories", get(get_categories))
         .route("/api/products/brands", get(get_brands))
+        .route("/api/tasks/:id", put(upsert_task))
+        .route("/api/tasks/:id", get(get_task))
+        .route("/api/tasks/:id", axum::routing::delete(delete_task))
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
@@ -278,6 +295,40 @@ async fn get_brands(State(state): State<AppState>) -> Result<impl IntoResponse, 
         .collect();
 
     Ok((StatusCode::OK, Json(brands)))
+}
+
+// Task endpoints for offline queue demo
+async fn get_task(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<(StatusCode, Json<serde_json::Value>), AppError> {
+    match state.tasks_collection.find_one(doc! { "id": &id }).await? {
+        Some(task) => Ok((StatusCode::OK, Json(serde_json::to_value(task).unwrap()))),
+        None => Ok((StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "not found" })))),
+    }
+}
+
+async fn upsert_task(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(task): Json<Task>,
+) -> Result<impl IntoResponse, AppError> {
+    let _ = state
+        .tasks_collection
+        .replace_one(doc! { "id": &id }, &task)
+        .upsert(true)
+        .await?;
+    info!("Upserted task {}", id);
+    Ok((StatusCode::OK, Json(task)))
+}
+
+async fn delete_task(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let _ = state.tasks_collection.delete_one(doc! { "id": &id }).await?;
+    info!("Deleted task {}", id);
+    Ok((StatusCode::OK, Json(serde_json::json!({ "deleted": true }))))
 }
 
 // Error handling

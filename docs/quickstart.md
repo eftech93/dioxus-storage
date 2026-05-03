@@ -94,31 +94,43 @@ struct Task {
 }
 
 impl Syncable for Task {
-    fn id(&self) -> String { self.id.clone() }
-    fn version(&self) -> u64 { 0 }
+    fn sync_id(&self) -> String { self.id.clone() }
+    fn sync_timestamp(&self) -> i64 { 0 }
+    fn mark_synced(&mut self) {}
+    fn is_dirty(&self) -> bool { true }
 }
 
 #[component]
 fn TaskApp() -> Element {
+    let collection: Collection<Task> = /* initialized elsewhere */;
+
     let config = SyncConfig::new("http://localhost:3001/api")
-        .with_collection("tasks")
-        .with_hot_sync(true);
-    
-    let sync = use_sync::<Task>(config);
-    
+        .with_hot_sync(true)
+        .with_resource_path("tasks");
+
+    let manager = SyncManager::new(collection, config);
+    let mut tasks = use_signal(Vec::<Task>::new);
+
     rsx! {
         div {
             h1 { "Tasks" }
-            
+
             // Load button
             button {
-                onclick: move |_| sync.sync_now(),
+                onclick: move |_| {
+                    let mgr = manager.clone();
+                    spawn(async move {
+                        if let Ok(all) = mgr.get_all().await {
+                            tasks.set(all);
+                        }
+                    });
+                },
                 "🔄 Load Tasks"
             }
-            
+
             // Task list
             ul {
-                for task in sync.data.read().iter() {
+                for task in tasks.read().iter() {
                     li {
                         if task.done { "✅" } else { "⬜" }
                         " {task.title}"

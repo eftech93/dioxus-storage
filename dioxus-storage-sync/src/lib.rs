@@ -107,8 +107,8 @@ pub mod prelude {
     pub use super::{BackendAdapter, Syncable};
     pub use super::{ConflictResolution, SyncConfig, SyncMode};
     pub use super::{HttpClient, SyncClient};
-    pub use super::{Result, SyncError};
     pub use super::{OfflineQueue, QueueOp, QueueReplayResult, QueuedOperation};
+    pub use super::{Result, SyncError};
     pub use super::{SyncEngine, SyncResult};
     pub use super::{SyncManager, SyncStatus};
     pub use dioxus_signals::Signal;

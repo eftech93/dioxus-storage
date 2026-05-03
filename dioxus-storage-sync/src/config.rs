@@ -7,6 +7,8 @@ use std::time::Duration;
 pub struct SyncConfig {
     /// Backend API base URL
     pub api_url: String,
+    /// Resource path segment for API endpoints (e.g. "products", "tasks")
+    pub resource_path: String,
     /// Enable hot sync (on-demand fetching)
     pub hot_sync: bool,
     /// Enable background sync with interval
@@ -66,6 +68,7 @@ impl SyncConfig {
     pub fn new(api_url: impl Into<String>) -> Self {
         Self {
             api_url: api_url.into(),
+            resource_path: "items".to_string(),
             hot_sync: false,
             background_sync: None,
             auth_token: None,
@@ -75,6 +78,12 @@ impl SyncConfig {
             headers: Vec::new(),
             mode: SyncMode::default(),
         }
+    }
+
+    /// Set the resource path for API endpoints
+    pub fn with_resource_path(mut self, path: impl Into<String>) -> Self {
+        self.resource_path = path.into();
+        self
     }
 
     /// Enable hot sync

@@ -61,6 +61,7 @@ A complete example demonstrating **Dioxus Storage Sync** with a real backend.
 │  │     📴 Offline Queue Demo            │                        │
 │  │  - SyncManager with offline queue   │                        │
 │  │  - Queue / replay / status          │                        │
+│  │  - Configurable resource path       │                        │
 │  └─────────────────────────────────────┘                        │
 └─────────────────────────────────────────────────────────────────┘
                                     │
@@ -69,7 +70,10 @@ A complete example demonstrating **Dioxus Storage Sync** with a real backend.
 │                    Rust API (Axum)                               │
 │  - GET /api/products (paginated)                                │
 │  - GET /api/products/search                                     │
-│  - GET /api/sync                                                │
+│  - GET /api/products/categories                                 │
+│  - GET /api/products/brands                                     │
+│  - PUT /api/tasks/:id  (offline queue upsert)                   │
+│  - DELETE /api/tasks/:id  (offline queue delete)                │
 └─────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -130,9 +134,11 @@ Navigate to `http://localhost:8080` (or the URL shown by `dx`).
 3. **Go offline** — open DevTools → Network → check **Offline**.
 4. **Add a task while offline** — the operation is queued internally.
 5. **Check the status bar** — it shows `🔴 Offline | Pending: N`.
-6. **Replay manually** — click **🔄 Replay Queue** to replay pending operations against local IndexedDB.
+6. **Replay manually** — click **🔄 Replay Queue** to replay pending operations to the backend (`PUT /api/tasks/:id`).
 7. **Go back online** — uncheck **Offline**. The background sync loop replays the queue automatically.
 8. **Toggle / delete tasks** — click the checkbox to mark complete, or 🗑️ to delete. These flow through `SyncManager`.
+
+> The queue demo uses `.with_resource_path("tasks")` so that `SyncEngine` and `OfflineQueue::replay` hit `/api/tasks/:id` instead of the default `/api/items/:id`.
 
 ## Sync Event Log
 

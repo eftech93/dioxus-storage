@@ -29,6 +29,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Conflict resolution during replay (ServerWins, Manual, etc.)
   - Queue status exposed in `SyncStatus` (`queue_pending`, `queue_replaying`, `is_online`)
   - `SyncManager::replay_queue()` for manual replay
+- **`SyncConfig::resource_path`** - Configurable API resource path
+  - `.with_resource_path("tasks")` builder method
+  - `SyncEngine` and `OfflineQueue::replay` use `resource_path` instead of hardcoded `"items"`
+  - Defaults to `"items"` for backward compatibility
+
+#### Demo Backend
+- **Task endpoints** for offline queue demo
+  - `GET /api/tasks/:id` - Fetch a single task
+  - `PUT /api/tasks/:id` - Upsert a task (insert or replace)
+  - `DELETE /api/tasks/:id` - Delete a task
 
 ## [0.0.2] - 2025-04-05
 
@@ -65,17 +75,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `use_local_storage`, `use_session_storage` hooks
 - IndexedDB integration via `dioxus-indexeddb`
 
-#### dioxus-client-storage-sync
+#### dioxus-storage-sync
 - Hot sync mode - On-demand fetching with local cache
 - Background sync mode - Periodic synchronization
 - Conflict resolution strategies
 - Bidirectional sync (push local changes to server)
-- `use_sync` hook for reactive sync state
+- `use_sync_manager` hook for reactive sync state
 
 ### Examples
 - Basic demo showing all storage types
 - Sync demo with MongoDB backend
 - Complete documentation with docsify
 
+[0.0.3]: https://github.com/eftech93/dioxus-client-storage/releases/tag/v0.0.3
 [0.0.2]: https://github.com/eftech93/dioxus-client-storage/releases/tag/v0.0.2
 [0.0.1]: https://github.com/eftech93/dioxus-client-storage/releases/tag/v0.0.1

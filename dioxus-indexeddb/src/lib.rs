@@ -64,7 +64,9 @@ pub mod prelude {
     pub use super::schema::{Schema, SchemaDatabase, Store, StoreDefinition};
     pub use super::{execute_query, Filter, Order, Query, QueryResult};
     pub use super::{use_collection, use_db, use_query};
-    pub use super::{Collection, Cursor, CursorBound, Database, DatabaseConfig, IndexedDbError, Result};
+    pub use super::{
+        Collection, Cursor, CursorBound, Database, DatabaseConfig, IndexedDbError, Result,
+    };
     pub use super::{DatabaseBuilder, Migration, MigrationManager, MigrationOp};
     pub use super::{IndexConfig, StoreConfig};
     pub use idb::{CursorDirection, KeyRange};

@@ -126,11 +126,23 @@ async fn test_offline_queue_multiple_stores() {
     let queue = OfflineQueue::with_collection(collection);
 
     queue
-        .enqueue("store_a", QueueOp::Insert(Task { id: "a1".into(), title: "A".into() }))
+        .enqueue(
+            "store_a",
+            QueueOp::Insert(Task {
+                id: "a1".into(),
+                title: "A".into(),
+            }),
+        )
         .await
         .unwrap();
     queue
-        .enqueue("store_b", QueueOp::Insert(Task { id: "b1".into(), title: "B".into() }))
+        .enqueue(
+            "store_b",
+            QueueOp::Insert(Task {
+                id: "b1".into(),
+                title: "B".into(),
+            }),
+        )
         .await
         .unwrap();
 

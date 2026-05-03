@@ -64,13 +64,14 @@ impl<T: Syncable + Serialize + DeserializeOwned + Clone> SyncManager<T> {
             let mut qcs = queue_collection;
             spawn(async move {
                 let db_name = format!("{}_sync_queue", collection_name);
-                match Database::open(DatabaseConfig::new(&db_name, 1).with_store("operations", "id"))
-                    .await
+                match Database::open(
+                    DatabaseConfig::new(&db_name, 1).with_store("operations", "id"),
+                )
+                .await
                 {
                     Ok(db) => {
-                        let qc = db.collection::<crate::offline_queue::QueuedOperation<T>>(
-                            "operations",
-                        );
+                        let qc =
+                            db.collection::<crate::offline_queue::QueuedOperation<T>>("operations");
                         qcs.set(Some(qc));
                         log::info!("Offline queue DB initialized: {}", db_name);
                     }

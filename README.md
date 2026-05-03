@@ -76,26 +76,33 @@ fn App() -> Element {
 - `IndexedDB` integration via `dioxus-indexeddb`
 - Reactive hooks that sync with storage
 
-### `dioxus-client-storage-sync`
+### `dioxus-storage-sync`
 
 Two-way synchronization between local IndexedDB and backend API.
 
 ```rust
-use dioxus_client_storage_sync::prelude::*;
+use dioxus_storage_sync::prelude::*;
+use dioxus_indexeddb::Collection;
 
 #[component]
 fn ProductList() -> Element {
-    // Configure sync
+    let collection: Collection<Product> = /* initialized elsewhere */;
+
     let config = SyncConfig::new("http://api.example.com")
-        .with_collection("products");
-    
-    let sync = use_sync::<Product>(config);
-    
-    // Hot sync: checks local first, fetches if empty
-    let products = sync.query_with_hot_sync(Query::new()).await?;
-    
-    // Background sync: periodic updates
-    sync.start_background_sync(Duration::from_secs(30));
+        .with_resource_path("products")
+        .with_hot_sync(true)
+        .with_background_sync(Duration::from_secs(30));
+
+    let manager = SyncManager::new(collection, config);
+    manager.start();
+
+    rsx! {
+        div {
+            for product in manager.get_all().await.unwrap_or_default() {
+                p { "{product.name}" }
+            }
+        }
+    }
 }
 ```
 
@@ -105,6 +112,7 @@ fn ProductList() -> Element {
 - 📊 **Conflict Resolution** - Handle simultaneous updates
 - 🔄 **Bidirectional** - Push local changes to server
 - 📴 **Offline Queue** - Queue mutations when offline and replay when connection is restored
+- 🔧 **Configurable Resource Path** - `.with_resource_path("tasks")` for custom REST endpoints
 
 ## Examples
 
@@ -122,6 +130,7 @@ Complete example with backend API:
 - Paginated sync (10 pages × 5 items)
 - Hot sync vs Background sync
 - Visual sync logging
+- **Offline queue demo** with task CRUD and replay
 
 ```bash
 # 1. Start backend

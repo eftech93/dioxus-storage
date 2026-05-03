@@ -130,11 +130,11 @@ impl<T: Syncable + Serialize + DeserializeOwned + Clone> OfflineQueue<T> {
         for op in ops {
             let res = match &op.op {
                 QueueOp::Insert(item) | QueueOp::Update(item) => {
-                    let path = format!("items/{}", item.sync_id());
+                    let path = format!("{}/{}", config.resource_path, item.sync_id());
                     client.put(&path, item).await
                 }
                 QueueOp::Delete(id) => {
-                    let path = format!("items/{}", id);
+                    let path = format!("{}/{}", config.resource_path, id);
                     let _: serde_json::Value = client.delete(&path).await?;
                     Ok(())
                 }
@@ -156,9 +156,7 @@ impl<T: Syncable + Serialize + DeserializeOwned + Clone> OfflineQueue<T> {
                     let _ = self.dequeue(&op.id).await;
                     result.success += 1;
                 }
-                Err(SyncError::Http(ref e))
-                    if e.contains("409") || e.contains("Conflict") =>
-                {
+                Err(SyncError::Http(ref e)) if e.contains("409") || e.contains("Conflict") => {
                     result.conflicts += 1;
                     match config.conflict_resolution {
                         ConflictResolution::ServerWins => {
@@ -175,7 +173,9 @@ impl<T: Syncable + Serialize + DeserializeOwned + Clone> OfflineQueue<T> {
                 }
                 Err(e) => {
                     result.failed += 1;
-                    result.errors.push(format!("Queue op {} failed: {}", op.id, e));
+                    result
+                        .errors
+                        .push(format!("Queue op {} failed: {}", op.id, e));
                 }
             }
         }

@@ -47,7 +47,8 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
         log::info!("Performing hot sync");
 
         // Fetch from backend (simplified - no query params)
-        let items: Vec<T> = self.client.fetch_with_retry("items", None).await?;
+        let path = self.config.resource_path.clone();
+        let items: Vec<T> = self.client.fetch_with_retry(&path, None).await?;
 
         // Store locally
         for item in &items {
@@ -71,7 +72,7 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
         if self.config.is_hot_sync_enabled() {
             log::info!("Item {} not found locally, fetching from backend", id);
 
-            let path = format!("items/{}", id);
+            let path = format!("{}/{}", self.config.resource_path, id);
             match self.client.get(&path).await {
                 Ok(item) => {
                     // Store locally
@@ -134,10 +135,11 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
 
         // Fetch from backend
         let items: Vec<T> = if let Some(p) = params {
-            self.client.fetch_with_retry("items/sync", Some(&p)).await?
+            let path = format!("{}/sync", self.config.resource_path);
+            self.client.fetch_with_retry(&path, Some(&p)).await?
         } else {
             self.client
-                .fetch_with_retry::<Vec<T>>("items", None)
+                .fetch_with_retry::<Vec<T>>(&self.config.resource_path, None)
                 .await?
         };
 
@@ -192,9 +194,13 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
 
         // Push in batches
         for chunk in dirty_items.chunks(self.config.batch_size) {
-            let path = "items/batch";
+            let path = format!("{}/batch", self.config.resource_path);
 
-            match self.client.post::<serde_json::Value, _>(path, &chunk).await {
+            match self
+                .client
+                .post::<serde_json::Value, _>(&path, &chunk)
+                .await
+            {
                 Ok(_) => {
                     result.pushed += chunk.len();
 

@@ -78,7 +78,8 @@ fn OfflineQueueDemoInner(db: Database) -> Element {
     let config = SyncConfig::new("http://localhost:3001/api")
         .with_mode(SyncMode::Bidirectional)
         .with_hot_sync(true)
-        .with_conflict_resolution(ConflictResolution::LastWriteWins);
+        .with_conflict_resolution(ConflictResolution::LastWriteWins)
+        .with_resource_path("tasks");
     let manager = Rc::new(SyncManager::new(collection, config));
 
     let tasks = use_signal(Vec::<Task>::new);

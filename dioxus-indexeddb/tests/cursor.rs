@@ -35,15 +35,33 @@ async fn test_cursor_basic_iteration() {
 
     let collection: Collection<Item> = db.collection("items");
     collection
-        .put("a", &Item { id: "a".into(), name: "Alice".into() })
+        .put(
+            "a",
+            &Item {
+                id: "a".into(),
+                name: "Alice".into(),
+            },
+        )
         .await
         .unwrap();
     collection
-        .put("b", &Item { id: "b".into(), name: "Bob".into() })
+        .put(
+            "b",
+            &Item {
+                id: "b".into(),
+                name: "Bob".into(),
+            },
+        )
         .await
         .unwrap();
     collection
-        .put("c", &Item { id: "c".into(), name: "Carol".into() })
+        .put(
+            "c",
+            &Item {
+                id: "c".into(),
+                name: "Carol".into(),
+            },
+        )
         .await
         .unwrap();
 
@@ -69,15 +87,33 @@ async fn test_cursor_reverse_iteration() {
 
     let collection: Collection<Item> = db.collection("items");
     collection
-        .put("a", &Item { id: "a".into(), name: "Alice".into() })
+        .put(
+            "a",
+            &Item {
+                id: "a".into(),
+                name: "Alice".into(),
+            },
+        )
         .await
         .unwrap();
     collection
-        .put("b", &Item { id: "b".into(), name: "Bob".into() })
+        .put(
+            "b",
+            &Item {
+                id: "b".into(),
+                name: "Bob".into(),
+            },
+        )
         .await
         .unwrap();
     collection
-        .put("c", &Item { id: "c".into(), name: "Carol".into() })
+        .put(
+            "c",
+            &Item {
+                id: "c".into(),
+                name: "Carol".into(),
+            },
+        )
         .await
         .unwrap();
 
@@ -103,15 +139,33 @@ async fn test_cursor_advance() {
 
     let collection: Collection<Item> = db.collection("items");
     collection
-        .put("a", &Item { id: "a".into(), name: "Alice".into() })
+        .put(
+            "a",
+            &Item {
+                id: "a".into(),
+                name: "Alice".into(),
+            },
+        )
         .await
         .unwrap();
     collection
-        .put("b", &Item { id: "b".into(), name: "Bob".into() })
+        .put(
+            "b",
+            &Item {
+                id: "b".into(),
+                name: "Bob".into(),
+            },
+        )
         .await
         .unwrap();
     collection
-        .put("c", &Item { id: "c".into(), name: "Carol".into() })
+        .put(
+            "c",
+            &Item {
+                id: "c".into(),
+                name: "Carol".into(),
+            },
+        )
         .await
         .unwrap();
 
@@ -151,11 +205,23 @@ async fn test_cursor_stream() {
 
     let collection: Collection<Item> = db.collection("items");
     collection
-        .put("a", &Item { id: "a".into(), name: "Alice".into() })
+        .put(
+            "a",
+            &Item {
+                id: "a".into(),
+                name: "Alice".into(),
+            },
+        )
         .await
         .unwrap();
     collection
-        .put("b", &Item { id: "b".into(), name: "Bob".into() })
+        .put(
+            "b",
+            &Item {
+                id: "b".into(),
+                name: "Bob".into(),
+            },
+        )
         .await
         .unwrap();
 
@@ -179,15 +245,33 @@ async fn test_cursor_bound_range() {
 
     let collection: Collection<Item> = db.collection("items");
     collection
-        .put("a", &Item { id: "a".into(), name: "Alice".into() })
+        .put(
+            "a",
+            &Item {
+                id: "a".into(),
+                name: "Alice".into(),
+            },
+        )
         .await
         .unwrap();
     collection
-        .put("b", &Item { id: "b".into(), name: "Bob".into() })
+        .put(
+            "b",
+            &Item {
+                id: "b".into(),
+                name: "Bob".into(),
+            },
+        )
         .await
         .unwrap();
     collection
-        .put("c", &Item { id: "c".into(), name: "Carol".into() })
+        .put(
+            "c",
+            &Item {
+                id: "c".into(),
+                name: "Carol".into(),
+            },
+        )
         .await
         .unwrap();
 
