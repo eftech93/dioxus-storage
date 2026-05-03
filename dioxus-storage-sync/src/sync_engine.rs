@@ -303,29 +303,6 @@ impl<T: Syncable + Serialize + DeserializeOwned> SyncEngine<T> {
     }
 }
 
-/// Sync metadata stored in IndexedDB
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-struct SyncMetadata {
-    id: String,
-    timestamp: i64,
-}
-
-impl Syncable for SyncMetadata {
-    fn sync_id(&self) -> String {
-        self.id.clone()
-    }
-
-    fn sync_timestamp(&self) -> i64 {
-        self.timestamp
-    }
-
-    fn mark_synced(&mut self) {}
-
-    fn is_dirty(&self) -> bool {
-        false
-    }
-}
-
 /// Result of a sync operation
 #[derive(Debug, Clone, Default)]
 pub struct SyncResult {
