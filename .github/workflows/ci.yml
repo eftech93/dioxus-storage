@@ -86,12 +86,10 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
+      # Note: only dry-run the leaf crate. Dependent crates cannot be
+      # dry-run because their workspace dependencies are not yet on crates.io.
       - name: Dry-run publish dioxus-indexeddb
         run: cargo publish --dry-run --package dioxus-indexeddb --allow-dirty
-      - name: Dry-run publish dioxus-client-storage
-        run: cargo publish --dry-run --package dioxus-client-storage --allow-dirty
-      - name: Dry-run publish dioxus-storage-sync
-        run: cargo publish --dry-run --package dioxus-storage-sync --allow-dirty
 
   publish:
     name: Publish to crates.io
